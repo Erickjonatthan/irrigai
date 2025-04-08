@@ -15,6 +15,7 @@ from app.process.visualization import PlotGrafico
 from app.process.data_processing import status, precipitacao_ano
 from app.process.map_operations import criar_mapa
 from app.process.graphics import gerar_grafico_precipitacao, mostraGraficoDoAno
+from app.globals import stop_event  # Atualize a importação
 
 # ...restante do código...
 _user = os.getenv('USER_ENV_VAR', '')
@@ -73,6 +74,9 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2001, _a
 
     _precipitacao = {}
     for i in range(_ano_inicial, _ano_final + 1):
+        if stop_event.is_set():
+            print("Processo interrompido pelo usuário no loop principal.")
+            break
         _precipitacao[i] = precipitacao_ano(i, _quadrado, _localdataName)
 
     _dados = pd.DataFrame()
