@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrada de Coordenadas</title>
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <style>
+        #map {
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Digite as Informações</h1>
+        <form action="/resultado" method="POST" class="p-4 border rounded shadow">
+            <div class="mb-3">
+                <label class="form-label">Localização Detectada:</label>
+                <p id="endereco" class="form-control-plaintext">Carregando localização...</p>
+                <p id="coordenadas" class="form-control-plaintext text-muted"></p>
+                <button type="button" id="editarLocal" class="btn btn-sm btn-secondary mb-2">Editar Localização</button>
+            </div>
+            <input type="hidden" id="latitude" name="latitude" required>
+            <input type="hidden" id="longitude" name="longitude" required>
+            <div class="mb-3">
+                <label for="cultura" class="form-label">Cultura:</label>
+                <select id="cultura" name="cultura" class="form-select" required>
+                    <option value="" disabled selected>Selecione uma cultura</option>
+                    <option value="milho">Milho</option>
+                    <option value="feijao">Feijão</option>
+                    <option value="tomate">Tomate</option>
+                    <option value="cana-de-acucar">Cana de Açúcar</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="estagio" class="form-label">Estágio:</label>
+                <select id="estagio" name="estagio" class="form-select" required>
+                    <option value="" disabled selected>Selecione um estágio</option>
+                    <option value="inicial">Inicial</option>
+                    <option value="medio">Médio</option>
+                    <option value="final">Final</option>
+                </select>
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary">Enviar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal do mapa -->
+    <div class="modal fade" id="mapModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Selecione a Localização</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        let latitudeInput = document.getElementById('latitude');
+        let longitudeInput = document.getElementById('longitude');
+        let enderecoP = document.getElementById('endereco');
+        let coordenadasP = document.getElementById('coordenadas');
+        let editarBtn = document.getElementById('editarLocal');
+        let mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
+
+        function atualizarEndereco(lat, lon) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+                .then(res => res.json())
+                .then(data => {
+                    let cidade = data.address.city || data.address.town || data.address.village || "Localização desconhecida";
+                    let estado = data.address.state || "";
+                    enderecoP.textContent = `${cidade} - ${estado}`;
+                    coordenadasP.textContent = `Latitude: ${lat.toFixed(6)}, Longitude: ${lon.toFixed(6)}`;
+                });
+        }
+
+        function preencherLocalizacao(lat, lon) {
+            latitudeInput.value = lat.toFixed(6);
+            longitudeInput.value = lon.toFixed(6);
+            atualizarEndereco(lat, lon);
+        }
+
+        // Localização automática
+        window.onload = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    let lat = pos.coords.latitude;
+                    let lon = pos.coords.longitude;
+                    preencherLocalizacao(lat, lon);
+                }, err => {
+                    enderecoP.textContent = "Erro ao detectar localização.";
+                });
+            } else {
+                enderecoP.textContent = "Seu navegador não suporta geolocalização.";
+            }
+        };
+
+        // Abertura do mapa
+        editarBtn.addEventListener("click", () => {
+            latitudeInput.removeAttribute("readonly");
+            longitudeInput.removeAttribute("readonly");
+            mapModal.show();
+
+            setTimeout(() => {
+                let lat = parseFloat(latitudeInput.value) || -10;
+                let lon = parseFloat(longitudeInput.value) || -50;
+                let map = L.map('map').setView([lat, lon], 6);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+
+                let marker = L.marker([lat, lon], { draggable: true }).addTo(map);
+
+                map.on('click', e => {
+                    marker.setLatLng(e.latlng);
+                    preencherLocalizacao(e.latlng.lat, e.latlng.lng);
+                });
+
+                marker.on('dragend', e => {
+                    let pos = marker.getLatLng();
+                    preencherLocalizacao(pos.lat, pos.lng);
+                });
+            }, 500); // delay para garantir que o modal carregue
+        });
+    </script>
+</body>
+</html>

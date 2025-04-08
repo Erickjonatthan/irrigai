@@ -1,0 +1,12 @@
+Flask
+notebook
+pandas
+numpy
+matplotlib
+climateservaccess
+pyperclip
+geopandas
+folium
+requests
+rasterio
+scikit-learn

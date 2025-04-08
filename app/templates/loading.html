@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carregando...</title>
+    <script>
+        function verificarProgresso() {
+            fetch("/progresso")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("status").innerText = data.status;
+                    if (data.status === "Processamento concluído.") {
+                        window.location.href = "/resultado";
+                    } else {
+                        setTimeout(verificarProgresso, 1000);
+                    }
+                });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            verificarProgresso();
+        });
+    </script>
+</head>
+<body>
+    <h1>Carregando...</h1>
+    <p id="status">Iniciando...</p>
+</body>
+</html>
