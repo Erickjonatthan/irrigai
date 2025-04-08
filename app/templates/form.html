@@ -86,104 +86,120 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        let latitudeInput = document.getElementById('latitude');
-        let longitudeInput = document.getElementById('longitude');
-        let enderecoP = document.getElementById('endereco');
-        let coordenadasP = document.getElementById('coordenadas');
-        let editarBtn = document.getElementById('editarLocal');
-        let mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('form');
+            const loadingModalElement = document.getElementById('loadingModal');
+            const loadingModal = new bootstrap.Modal(loadingModalElement); // Instância única do modal
+            const stopButton = document.getElementById('stopButton');
+            const latitudeInput = document.getElementById('latitude');
+            const longitudeInput = document.getElementById('longitude');
+            const enderecoP = document.getElementById('endereco');
+            const coordenadasP = document.getElementById('coordenadas');
+            const editarBtn = document.getElementById('editarLocal');
+            const mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
+            let isModalVisible = false;
 
-        function atualizarEndereco(lat, lon) {
-            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
-                .then(res => res.json())
-                .then(data => {
-                    let cidade = data.address.city || data.address.town || data.address.village || "Localização desconhecida";
-                    let estado = data.address.state || "";
-                    enderecoP.textContent = `${cidade} - ${estado}`;
-                    coordenadasP.textContent = `Latitude: ${lat.toFixed(6)}, Longitude: ${lon.toFixed(6)}`;
-                });
-        }
+            // Função para atualizar o endereço com base nas coordenadas
+            function atualizarEndereco(lat, lon) {
+                fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const cidade = data.address.city || data.address.town || data.address.village || "Localização desconhecida";
+                        const estado = data.address.state || "";
+                        enderecoP.textContent = `${cidade} - ${estado}`;
+                        coordenadasP.textContent = `Latitude: ${lat.toFixed(6)}, Longitude: ${lon.toFixed(6)}`;
+                    });
+            }
 
-        function preencherLocalizacao(lat, lon) {
-            latitudeInput.value = lat.toFixed(6);
-            longitudeInput.value = lon.toFixed(6);
-            atualizarEndereco(lat, lon);
-        }
+            // Função para preencher os campos de localização
+            function preencherLocalizacao(lat, lon) {
+                latitudeInput.value = lat.toFixed(6);
+                longitudeInput.value = lon.toFixed(6);
+                atualizarEndereco(lat, lon);
+            }
 
-        // Localização automática
-        window.onload = () => {
+            // Localização automática ao carregar a página
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
-                    let lat = pos.coords.latitude;
-                    let lon = pos.coords.longitude;
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
                     preencherLocalizacao(lat, lon);
-                }, err => {
+                }, () => {
                     enderecoP.textContent = "Erro ao detectar localização.";
                 });
             } else {
                 enderecoP.textContent = "Seu navegador não suporta geolocalização.";
             }
-        };
 
-        // Abertura do mapa
-        editarBtn.addEventListener("click", () => {
-            latitudeInput.removeAttribute("readonly");
-            longitudeInput.removeAttribute("readonly");
-            mapModal.show();
+            // Abertura do mapa para edição de localização
+            editarBtn.addEventListener("click", () => {
+                latitudeInput.removeAttribute("readonly");
+                longitudeInput.removeAttribute("readonly");
+                mapModal.show();
 
-            setTimeout(() => {
-                let lat = parseFloat(latitudeInput.value) || -10;
-                let lon = parseFloat(longitudeInput.value) || -50;
-                let map = L.map('map').setView([lat, lon], 6);
+                setTimeout(() => {
+                    const lat = parseFloat(latitudeInput.value) || -10;
+                    const lon = parseFloat(longitudeInput.value) || -50;
+                    const map = L.map('map').setView([lat, lon], 6);
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors'
+                    }).addTo(map);
 
-                let marker = L.marker([lat, lon], { draggable: true }).addTo(map);
+                    const marker = L.marker([lat, lon], { draggable: true }).addTo(map);
 
-                map.on('click', e => {
-                    marker.setLatLng(e.latlng);
-                    preencherLocalizacao(e.latlng.lat, e.latlng.lng);
-                });
+                    map.on('click', e => {
+                        marker.setLatLng(e.latlng);
+                        preencherLocalizacao(e.latlng.lat, e.latlng.lng);
+                    });
 
-                marker.on('dragend', e => {
-                    let pos = marker.getLatLng();
-                    preencherLocalizacao(pos.lat, pos.lng);
-                });
-            }, 500); // delay para garantir que o modal carregue
-        });
-    </script>
-    <script>
-        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-        const stopButton = document.getElementById('stopButton');
+                    marker.on('dragend', () => {
+                        const pos = marker.getLatLng();
+                        preencherLocalizacao(pos.lat, pos.lng);
+                    });
+                }, 500); // Delay para garantir que o modal carregue
+            });
 
-        document.querySelector('form').addEventListener('submit', function (e) {
-            e.preventDefault();
-            loadingModal.show();
+            // Envio do formulário com exibição do modal de carregamento
+            form.addEventListener('submit', function (e) {
+                e.preventDefault(); // Evita o envio padrão do formulário
+                loadingModal.show(); // Exibe o modal de carregamento
+                isModalVisible = true; // Marca que o modal está visível
 
-            const formData = new FormData(this);
-            fetch('/iniciar-carregamento', {
-                method: 'POST',
-                body: formData
-            }).then(response => response.json())
-              .then(data => console.log(data));
-        });
+                const formData = new FormData(this);
+                fetch('/iniciar-carregamento', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.json())
+                  .then(data => console.log(data));
+            });
 
-        stopButton.addEventListener('click', function () {
-            fetch('/parar-carregamento', {
-                method: 'POST'
-            }).then(response => response.json())
-              .then(data => {
-                  console.log(data);
-                  loadingModal.hide();
-              });
-        });
-    </script>
-    <script>
-        // Interrompe o download caso o usuário feche ou saia da página
-        window.addEventListener('beforeunload', function () {
-            navigator.sendBeacon('/parar-carregamento');
+            // Adiciona o aviso ao tentar sair da página apenas se o modal de carregamento estiver ativo
+            window.addEventListener('beforeunload', function (event) {
+                if (isModalVisible) { // Exibe o aviso apenas se o modal estiver ativo
+                    event.preventDefault();
+                    event.returnValue = 'Você tem certeza? Todo o progresso atual será perdido.';
+                }
+            });
+
+            // Envia a solicitação para parar o carregamento apenas se o usuário realmente sair
+            window.addEventListener('unload', function () {
+                if (isModalVisible) {
+                    navigator.sendBeacon('/parar-carregamento'); // Usa sendBeacon para garantir que a solicitação seja enviada
+                }
+            });
+
+            // Botão de parar carregamento
+            stopButton.addEventListener('click', function () {
+                fetch('/parar-carregamento', {
+                    method: 'POST'
+                }).then(response => response.json())
+                  .then(data => {
+                      console.log(data);
+                      loadingModal.hide(); // Esconde o modal de carregamento
+                      isModalVisible = false; // Marca que o modal não está mais visível
+                  });
+            });
         });
     </script>
 </body>

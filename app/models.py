@@ -28,6 +28,10 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2001, _a
     inDir = 'app/static/cache_data'
     api = 'https://appeears.earthdatacloud.nasa.gov/api/'
 
+    #cria a pasta cache_data se não existir
+    if not os.path.exists(inDir):
+        os.makedirs(inDir)
+
     # Caminho para o arquivo de cache de parâmetros
     parametros_cache_path = os.path.join(inDir, "parametros_cache.json")
 
