@@ -42,7 +42,7 @@ pip install -r requirements.txt
 
 3. Inicie o servidor:
 ```bash
-python app.py
+python run.py
 ```
 
 4. Acesse `http://localhost:5000` no navegador.
