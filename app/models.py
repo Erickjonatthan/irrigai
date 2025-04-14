@@ -1,20 +1,15 @@
-import json
 import os
-import time
-import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import climateservaccess as ca
-import numpy as np
 import requests
-from app.process.utils import gerenciar_cache_parametros, get_location_name
-from app.process.climate_analysis import calcular_e_classificar_indices_aridez, categoria_climatica, risco_desertificacao, recomendar_irrigacao
+from app.process.utils import gerenciar_cache_parametros, get_location_name, obter_token_autenticacao
+from app.process.climate_analysis import calcular_e_classificar_indices_aridez, recomendar_irrigacao
 from app.process.file_operations import criar_diretorios, obter_caminhos_graficos
-from app.process.visualization import PlotGrafico, calcular_e_gerar_grafico_rai, processar_balanco_hidrico, processar_dados_aridez
-from app.process.data_processing import precipitacao_ano_chirps, processar_precipitacao, status, balanco_hidrico_ano
+from app.process.visualization import calcular_e_gerar_grafico_rai, processar_balanco_hidrico, processar_dados_aridez
+from app.process.data_processing import processar_precipitacao
 from app.process.map_operations import criar_mapa
-from app.process.graphics import calcular_indices_e_gerar_graficos, gerar_grafico_balanco_hidrico, gerar_grafico_indice_aridez_unep, gerar_grafico_precipitacao, mostraGraficoDoAno
+from app.process.graphics import calcular_indices_e_gerar_graficos, gerar_grafico_indice_aridez_unep
 
 
 _user = os.getenv('USER_ENV_VAR', '')
@@ -27,7 +22,7 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2001, _a
     inDir = 'app/static/cache_data'
     api = 'https://appeears.earthdatacloud.nasa.gov/api/'
 
-    #cria a pasta cache_data se não existir
+    # Cria a pasta cache_data se não existir
     if not os.path.exists(inDir):
         os.makedirs(inDir)
 
@@ -45,17 +40,12 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2001, _a
     
     _localdataName, _graficos = criar_diretorios(inDir, latitude, longitude, _res)
 
-
     # Obter o nome da localização
     _NomeLocal = get_location_name(latitude, longitude)
     print(f"Nome da região: {_NomeLocal}")
     
-
-    token_response = requests.post('{}login'.format(api), auth=(_user, _password)).json()
-    token = token_response['token']                 
-    head = {'Authorization': 'Bearer {}'.format(token)}
-    print(token_response, token)
-
+    head = obter_token_autenticacao(api, _user, _password)
+    
     _quadrado = ca.getBox(latitude, longitude, _res)
     mapa_path, data_Json, geo_json_data = criar_mapa(latitude, longitude, _quadrado, _graficos)
 
@@ -84,6 +74,15 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2001, _a
         latitude, longitude, _res, _ano_inicial, _ano_final
     )
 
+    # Dados necessários para a recomendação de irrigação
+    dados_ET = _balanco["ET"]
+    dados_PET = _balanco["PET"]
+    dados_precipitacao = _precipitacao_df["Precipitacao"]
+    anos = _balanco["Ano"]  # Extrair os anos do DataFrame _balanco
+
+    # Obter recomendações de irrigação
+    recomendacoes = recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitacao, anos)
+
     return {
         "nome_local": _NomeLocal,
         "ano_inicial": _ano_inicial,
@@ -95,4 +94,5 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2001, _a
         "grafico_rai": grafico_rai_path,
         "grafico_aridez": grafico_aridez_path,
         "mapa_IA": mapaIA_path,
+        "recomendacoes": recomendacoes,  # Adiciona as recomendações ao retorno
     }

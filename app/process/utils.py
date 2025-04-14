@@ -56,3 +56,17 @@ def gerenciar_cache_parametros(inDir, parametros_atual):
     # Salvar os parâmetros atuais no cache
     with open(parametros_cache_path, "w") as f:
         json.dump(parametros_atual, f)
+
+def obter_token_autenticacao(api, _user, _password):
+    """
+    Obtém o token de autenticação da API usando as credenciais fornecidas.
+    """
+    try:
+        token_response = requests.post(f'{api}login', auth=(_user, _password)).json()
+        token = token_response['token']
+        head = {'Authorization': f'Bearer {token}'}
+        print(token_response, token)
+        return head
+    except Exception as e:
+        print(f"Erro ao obter o token de autenticação: {e}")
+        raise

@@ -1,12 +1,4 @@
 import numpy as np
-import pandas as pd
-
-kc_values = {
-    "milho": {"inicial": 0.4, "medio": 1.25, "final": 0.5},
-    "feijao": {"inicial": 0.55, "medio": 1.125, "final": 0.55},
-    "tomate": {"inicial": 0.65, "medio": 1.175, "final": 0.75},
-    "cana-de-acucar": {"inicial": 0.45, "medio": 1.275, "final": 0.925}
-}
 
 def categoria_climatica(index):
     if index >= 0.65:
@@ -32,25 +24,86 @@ def risco_desertificacao(ai):
     else:
         return "Low (L)"
 
-def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET):
+def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitacao, anos):
+    """
+    Fornece recomendações de irrigação em linguagem acessível com base nos dados médios mensais.
+    """
+    import pandas as pd
+
+    # Prints para depuração
+    print("=== Depuração: Dados de Entrada ===")
+    print(f"Dados ET recebidos:\n{dados_ET}")
+    print(f"Dados PET recebidos:\n{dados_PET}")
+    print(f"Dados de precipitação recebidos:\n{dados_precipitacao}")
+    print(f"Anos recebidos:\n{anos}")
+
     cultura = cultura.lower()
     estagio = estagio.lower()
-    if cultura not in kc_values:
-        raise ValueError(f"Cultura '{cultura}' não reconhecida. Escolha entre: {list(kc_values.keys())}")
-    if estagio not in kc_values[cultura]:
-        raise ValueError(f"Estágio '{estagio}' não reconhecido para a cultura '{cultura}'. Escolha entre: {list(kc_values[cultura].keys())}")
+    
+    kc_values = {
+        "milho": {"inicial": 0.4, "medio": 1.2, "final": 0.5},
+        "feijao": {"inicial": 0.3, "medio": 1.1, "final": 0.6},
+        "tomate": {"inicial": 0.6, "medio": 1.15, "final": 0.8},
+        "cana-de-acucar": {"inicial": 0.5, "medio": 1.25, "final": 0.9}
+    }
+
+    if cultura not in kc_values or estagio not in kc_values[cultura]:
+        raise ValueError("Cultura ou estágio inválido")
+
     kc = kc_values[cultura][estagio]
-    etc = dados_PET * kc
-    deficit = etc - dados_ET
-    necessidade_irrigacao = deficit > 0
-    recomendacoes = pd.DataFrame({
+    print(f"Kc selecionado para {cultura} no estágio {estagio}: {kc}")
+
+    # Criar DataFrame com os dados
+    df = pd.DataFrame({
+        "Ano": anos,
         "ET": dados_ET,
         "PET": dados_PET,
-        "ETc": etc,
-        "Déficit (mm)": deficit,
-        "Necessita Irrigação": necessidade_irrigacao
+        "Precipitacao": dados_precipitacao
     })
-    return recomendacoes
+
+    # Adicionar coluna de mês
+    df['Mes'] = (df.index % 12) + 1
+
+    print("=== DataFrame Inicial ===")
+    print(df)
+
+    # Calcular a média mensal ao longo de todos os anos
+    resumo = df.groupby('Mes').mean()
+    print("=== Resumo Mensal (Média) ===")
+    print(resumo)
+
+    mensagens = []
+    nomes_meses = {
+        1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 5: "Maio", 6: "Junho",
+        7: "Julho", 8: "Agosto", 9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"
+    }
+
+    for mes, linha in resumo.iterrows():
+        pet = linha["PET"]
+        et = linha["ET"]
+        prec = linha["Precipitacao"]
+        etc = pet * kc
+        deficit = etc - prec
+
+        # Print dos cálculos intermediários
+        print(f"Mês: {nomes_meses[mes]}, PET: {pet}, ET: {et}, Precipitação: {prec}, ETC: {etc}, Déficit: {deficit}")
+
+        if deficit > 0:
+            msg = (
+                f"📅 {nomes_meses[mes]} (média de {anos.min()} a {anos.max()}): Sua PET média foi de {pet:.1f} mm. "
+                f"Como sua cultura é {cultura} no estágio {estagio} (Kc = {kc}), "
+                f"a planta precisa de aproximadamente {etc:.1f} mm. "
+                f"A precipitação foi de {prec:.1f} mm, resultando em um déficit de {deficit:.1f} mm. "
+                f"💧 Recomendado realizar irrigação nesse mês."
+            )
+        else:
+            msg = (
+                f"📅 {nomes_meses[mes]} (média de {anos.min()} a {anos.max()}): PET média de {pet:.1f} mm e precipitação de {prec:.1f} mm. "
+                f"Não há déficit hídrico significativo — irrigação provavelmente não necessária."
+            )
+        mensagens.append(msg)
+
+    return mensagens
 
 def calcular_e_classificar_indices_aridez(_balanco, _ano_inicial, _ano_final):
     """

@@ -27,14 +27,24 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head):
         print(f"Carregando dados de {ano} localmente...")
         try:
             df = pd.read_csv(statistics_file)
+            print(f"Conteúdo do arquivo CSV:\n{df.head()}")  # Exibe as primeiras linhas do CSV
+
             # Verificar se as colunas 'Dataset' e 'Mean' existem
             if 'Dataset' not in df.columns or 'Mean' not in df.columns:
                 print(f"Erro: O arquivo {statistics_file} não contém as colunas esperadas ('Dataset' e 'Mean').")
                 return pd.Series(dtype=float), pd.Series(dtype=float)
             
             # Filtrar os dados com base na coluna 'Dataset'
-            et_series = df[df['Dataset'] == 'ET_500m']["Mean"].fillna(0)
-            pet_series = df[df['Dataset'] == 'PET_500m']["Mean"].fillna(0)
+            et_mean = df[df['Dataset'] == 'ET_500m']["Mean"].fillna(0).iloc[0]
+            pet_mean = df[df['Dataset'] == 'PET_500m']["Mean"].fillna(0).iloc[0]
+            print(f"ET (média anual): {et_mean}, PET (média anual): {pet_mean}")
+
+            # Dividir os valores anuais por 12 para obter médias mensais
+            et_series = pd.Series([et_mean / 12] * 12, index=range(1, 13))
+            pet_series = pd.Series([pet_mean / 12] * 12, index=range(1, 13))
+            print(f"ET (média mensal):\n{et_series}")
+            print(f"PET (média mensal):\n{pet_series}")
+
             return et_series, pet_series
         except Exception as e:
             print(f"Erro ao processar o arquivo {statistics_file}: {e}")
@@ -113,12 +123,25 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head):
         for f in os.listdir(_appEEARsDir):
             if 'ET_500m' in f:
                 with rasterio.open(os.path.join(_appEEARsDir, f)) as src:
-                    et_series.append(src.read(1).mean())
+                    et_mean = src.read(1).mean()
+                    et_series.append(et_mean)
+                    print(f"ET (GeoTIFF): {et_mean}")
             elif 'PET_500m' in f:
                 with rasterio.open(os.path.join(_appEEARsDir, f)) as src:
-                    pet_series.append(src.read(1).mean())
+                    pet_mean = src.read(1).mean()
+                    pet_series.append(pet_mean)
+                    print(f"PET (GeoTIFF): {pet_mean}")
 
-        return pd.Series(et_series), pd.Series(pet_series)
+        # Dividir os valores anuais por 12 para obter médias mensais
+        if len(et_series) == 1:
+            et_series = [et_series[0] / 12] * 12
+        if len(pet_series) == 1:
+            pet_series = [pet_series[0] / 12] * 12
+
+        print(f"ET (média mensal após GeoTIFF):\n{et_series}")
+        print(f"PET (média mensal após GeoTIFF):\n{pet_series}")
+
+        return pd.Series(et_series, index=range(1, 13)), pd.Series(pet_series, index=range(1, 13))
     except Exception as e:
         print(f"Erro ao processar arquivos GeoTIFF: {e}")
         return pd.Series(dtype=float), pd.Series(dtype=float)
