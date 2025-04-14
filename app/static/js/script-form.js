@@ -82,8 +82,22 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/iniciar-carregamento', {
             method: 'POST',
             body: formData
-        }).then(response => response.json())
-          .then(data => console.log(data));
+        }).then(response => {
+            if (response.redirected) {
+                isModalVisible = false; // Desativa o aviso antes do redirecionamento
+                window.location.href = response.url; // Redireciona para a nova URL
+            } else {
+                return response.json();
+            }
+        }).then(data => {
+            if (data) {
+                console.log(data);
+            }
+        }).catch(error => {
+            console.error('Erro ao processar o formulário:', error);
+            loadingModal.hide(); // Esconde o modal de carregamento em caso de erro
+            isModalVisible = false;
+        });
     });
 
     // Adiciona o aviso ao tentar sair da página apenas se o modal de carregamento estiver ativo
