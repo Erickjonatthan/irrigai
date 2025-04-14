@@ -1,6 +1,6 @@
 import os
 import matplotlib.pyplot as plt
-import pandas as pd
+import numpy as np
 import rasterio
 
 def gerar_grafico_balanco_hidrico(df, ano_inicial, ano_final, nome_local, pasta_saida):
@@ -81,8 +81,10 @@ def gerar_grafico_precipitacao(series_precipitacao, ano_inicial, ano_final, nome
     return caminho_saida
 
 def mostraGraficoDoAno(ano, _inDir):
-    import os
-    import rasterio
+    """
+    Mostra o gráfico de aridez para um ano específico.
+    
+    """
 
     # Caminho da subpasta do ano
     subpasta_ano = os.path.normpath(os.path.join(_inDir, f"BALANCO_HIDRICO_{ano}"))
@@ -117,3 +119,35 @@ def mostraGraficoDoAno(ano, _inDir):
     # Calcula o índice de aridez
     arid_data = et_data / pet_data
     return arid_data
+
+def calcular_indices_e_gerar_graficos(_balanco, _precipitacao_df, _ano_inicial, _ano_final, _graficos):
+    # Calcula os índices de aridez
+    _balanco["Indice de Aridez UNEP"] = _precipitacao_df["Precipitacao"] / _balanco["PET"]
+    _balanco["Aridez"] = _precipitacao_df["Precipitacao"] / _balanco["ET"]
+
+    # Gráfico de precipitação e evaporação
+    plt.figure(figsize=(10, 5))
+    plt.plot(_balanco["Ano"], _precipitacao_df["Precipitacao"], label="Precipitation")
+    plt.plot(_balanco["Ano"], _balanco["ET"], label="Evaporation")
+    plt.xticks(np.arange(_ano_inicial, _ano_final + 1, 1), rotation=45)
+    plt.xlabel('Year')
+    plt.ylabel('Annual Total (mm)')
+    plt.title('Average annual precipitation/evaporation')
+    plt.legend()
+    plt.savefig(os.path.join(_graficos, "precipitacao_e_evaporacao.png"), format="png")
+
+def gerar_grafico_indice_aridez_unep(_balanco, _ano_inicial, _ano_final, _graficos):
+    """
+    Gera o gráfico do índice de aridez UNEP e salva como imagem.
+    """
+    z = np.polyfit(_balanco["Ano"], _balanco["Indice de Aridez UNEP"], 1)
+    p = np.poly1d(z)  # Criando um objeto polinomial
+    plt.figure(figsize=(10, 5))
+    plt.plot(_balanco["Ano"], _balanco["Indice de Aridez UNEP"], label="Aridity index")
+    plt.plot(_balanco["Ano"], p(_balanco["Ano"]), 'r-', label="Trend")
+    plt.xticks(np.arange(_ano_inicial, _ano_final + 1, 1), rotation=45)
+    plt.xlabel('Year')
+    plt.ylabel('Aridity index')
+    plt.title('Aridity index in the chosen region')
+    plt.legend()
+    plt.savefig(os.path.join(_graficos, "IA.png"), format="png")

@@ -4,10 +4,11 @@ import pandas as pd
 import requests
 import gzip
 import shutil
-import datetime
-from shapely.geometry import shape
 import rioxarray
 import geopandas as gpd
+from shapely.geometry import shape
+from app.globals import stop_event  # Atualize a importação
+from app.process.graphics import gerar_grafico_precipitacao
 
 def status(id_tarefa, api, head):
     return requests.get(f'{api}task/{id_tarefa}', headers=head).json()['status']
@@ -167,12 +168,6 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName):
     Retorna:
       - Uma pandas Series com a média anual de precipitação (mm) na área
     """
-    import os
-    import requests
-    import rioxarray
-    import pandas as pd
-    import geopandas as gpd
-    from shapely.geometry import shape
 
     # Criar diretório para armazenar os arquivos do ano
     pasta_ano = os.path.join(_localdataName, f"CHIRPS_annual")
@@ -230,3 +225,36 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName):
         return pd.Series([])
 
     return pd.Series([media_anual])
+
+def processar_precipitacao(_ano_inicial, _ano_final, data_Json, _localdataName, _graficos, _NomeLocal):
+    """
+    Processa os dados de precipitação para os anos fornecidos e gera o gráfico correspondente.
+    """
+    _precipitacao_df = pd.DataFrame(columns=["Ano", "Precipitacao"])
+
+    for i in range(_ano_inicial, _ano_final + 1):
+        if stop_event.is_set():
+            print("Processo interrompido pelo usuário no loop principal.")
+            break
+        print(f"Processando precipitação para o ano: {i}")
+        precip_series = precipitacao_ano_chirps(i, data_Json, _localdataName)
+        if isinstance(precip_series, pd.Series) and not precip_series.empty:
+            precip_total = precip_series.iloc[0]
+            _precipitacao_df.loc[len(_precipitacao_df)] = [i, precip_total]
+        else:
+            print(f"Erro ao recuperar dados de precipitação para o ano {i}")
+
+    _precipitacao_df["Ano"] = _precipitacao_df["Ano"].astype(int)
+
+    # Converter o DataFrame para Series com o ano como índice
+    precip_series = _precipitacao_df.set_index("Ano")["Precipitacao"]
+
+    grafico_precipitacao_path = gerar_grafico_precipitacao(
+        precip_series,              # Series com o índice sendo o ano
+        _ano_inicial,
+        _ano_final,
+        _NomeLocal,
+        _graficos
+    )
+
+    return _precipitacao_df, grafico_precipitacao_path
