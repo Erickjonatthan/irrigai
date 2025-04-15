@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const editarBtn = document.getElementById("editarLocal");
   const mapModal = new bootstrap.Modal(document.getElementById("mapModal"));
   let isModalVisible = false;
+  let cancelamentoSolicitado = false;
 
   // Função para atualizar o endereço com base nas coordenadas
   function atualizarEndereco(lat, lon) {
@@ -96,37 +97,81 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Inicia carregamento no servidor
     fetch("/iniciar-carregamento", {
-        method: "POST",
-        body: formData
+      method: "POST",
+      body: formData,
     })
-    .then(res => res.json())
-    .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         const threadId = data.thread_id;
         buscarLogs(threadId); // Inicia polling
-    });
-});
+      });
+  });
 
-function buscarLogs(threadId) {
+  function buscarLogs(threadId) {
     const logContainer = document.getElementById("logStatus");
-
+  
     fetch(`/status?thread_id=${threadId}`)
-        .then(res => res.json())
-        .then(data => {
-            const logs = data.logs || [];
-            logContainer.textContent = logs[logs.length - 1] || "Iniciando..."; // Exibe apenas o último log
-
-            if (!logs.some(log => log.includes("Processamento completo")) && isModalVisible) {
-                statusInterval = setTimeout(() => buscarLogs(threadId), 2000);
-            } else {
-                clearInterval(statusInterval); // Para o polling ao concluir
-                window.location.href = `/resultados?thread_id=${threadId}`;
-            }
-        })
-        .catch(err => {
-            console.error("Erro ao buscar logs:", err);
-            logContainer.textContent = "[Erro ao buscar logs]";
-        });
-}
+      .then((res) => res.json())
+      .then((data) => {
+        const logs = data.logs || [];
+        let ultimoLog = logs[logs.length - 1] || "Iniciando...";
+  
+        const cancelado = logs.some(
+          (log) =>
+            log.includes("cancelada") ||
+            log.includes("interrompido") ||
+            log.includes("Processo interrompido pelo usuário")
+        );
+  
+        const completo = logs.some((log) =>
+          log.includes("Processamento completo")
+        );
+  
+        if (cancelamentoSolicitado) {
+          // Mostra apenas logs relacionados ao cancelamento
+          const cancelamentoLogs = logs.filter(
+            (log) =>
+              log.includes("cancelada") ||
+              log.includes("interrompido") ||
+              log.includes("Processo interrompido pelo usuário")
+          );
+  
+          if (cancelamentoLogs.length > 0) {
+            ultimoLog = cancelamentoLogs[cancelamentoLogs.length - 1];
+            logContainer.textContent = ultimoLog;
+          } else {
+            logContainer.textContent = "Cancelando..."; // fallback
+          }
+  
+          // Se algum log confirmar cancelamento, encerrar o polling
+          if (cancelado) {
+            clearTimeout(statusInterval);
+            setTimeout(() => {
+              loadingModal.hide();
+              isModalVisible = false;
+            }, 1500);
+          } else {
+            statusInterval = setTimeout(() => buscarLogs(threadId), 2000);
+          }
+  
+          return; // Evita continuar abaixo se já estamos lidando com cancelamento
+        }
+  
+        logContainer.textContent = ultimoLog;
+  
+        if (completo) {
+          clearTimeout(statusInterval);
+          window.location.href = `/resultados?thread_id=${threadId}`;
+        } else {
+          statusInterval = setTimeout(() => buscarLogs(threadId), 2000);
+        }
+      })
+      .catch((err) => {
+        console.error("Erro ao buscar logs:", err);
+        logContainer.textContent = "[Erro ao buscar logs]";
+      });
+  }
+  
 
   // Adiciona o aviso ao tentar sair da página apenas se o modal de carregamento estiver ativo
   window.addEventListener("beforeunload", function (event) {
@@ -146,17 +191,17 @@ function buscarLogs(threadId) {
   });
 
   stopButton.addEventListener("click", function () {
+    const logContainer = document.getElementById("logStatus");
+    logContainer.textContent = "Cancelando...";
+    cancelamentoSolicitado = true; // Ativa a flag
+
     fetch("/parar-carregamento", {
-        method: "POST",
+      method: "POST",
     })
-        .then((response) => response.json())
-        .then(() => {
-            clearTimeout(statusInterval); // Para o polling imediatamente
-            loadingModal.hide(); // Fecha o modal de carregamento
-            isModalVisible = false;
-        })
-        .catch((error) => {
-            console.error("Erro ao parar o carregamento:", error);
-        });
+      .then((response) => response.json())
+      .catch((error) => {
+        console.error("Erro ao parar o carregamento:", error);
+        logContainer.textContent = "[Erro ao tentar cancelar]";
+      });
   });
 });
