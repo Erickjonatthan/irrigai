@@ -10,14 +10,11 @@ import climateservaccess as ca
 _user = os.getenv('USER_ENV_VAR', '')
 _password = os.getenv('PASSWORD_ENV_VAR', '')
 
-# Função principal para processar os dados
-def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2022, _ano_final=2024):
-    # Configurações iniciais
+def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2022, _ano_final=2024, log=print):
     _res = 10
     inDir = 'app/static/cache_data'
     api = 'https://appeears.earthdatacloud.nasa.gov/api/'
 
-    # Cria a pasta cache_data se não existir
     if not os.path.exists(inDir):
         os.makedirs(inDir)
 
@@ -30,53 +27,62 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2022, _a
         "ano_final": _ano_final,
         "res": _res
     }
-    
+
+    log("Verificando cache de parâmetros...")
     gerenciar_cache_parametros(inDir, parametros_atual)
-    
+
     _localdataName, _graficos = criar_diretorios(inDir, latitude, longitude, _res)
 
-    # Obter o nome da localização
     _NomeLocal = get_location_name(latitude, longitude)
-    print(f"Nome da região: {_NomeLocal}")
-    
+    log(f"Nome da região detectada: {_NomeLocal}")
+
+    log("Autenticando com a API da NASA...")
     head = obter_token_autenticacao(api, _user, _password)
-    
+
     _quadrado = ca.getBox(latitude, longitude, _res)
+
+    log("Gerando mapa inicial...")
     mapa_path, data_Json, geo_json_data = criar_mapa(latitude, longitude, _quadrado, _graficos)
 
+    log("Processando balanço hídrico...")
     _balanco, grafico_balanco_hidrico_path = processar_balanco_hidrico(
         _ano_inicial, _ano_final, data_Json, _localdataName, api, head, _graficos, _NomeLocal
     )
 
+    log("Processando precipitação...")
     _precipitacao_df, grafico_precipitacao_path = processar_precipitacao(
         _ano_inicial, _ano_final, data_Json, _localdataName, _graficos, _NomeLocal
     )
 
-    # Calcula os índices de aridez e gera gráficos
+    log("Calculando índices de aridez...")
     calcular_indices_e_gerar_graficos(_balanco, _precipitacao_df, _ano_inicial, _ano_final, _graficos)
-    
-    # Gráfico do índice de aridez UNEP
+
+    log("Gerando gráfico de índice de aridez (UNEP)...")
     gerar_grafico_indice_aridez_unep(_balanco, _ano_inicial, _ano_final, _graficos)
-    
-    # Cálculo de médias e classificações
+
+    log("Classificando índices de aridez...")
     calcular_e_classificar_indices_aridez(_balanco, _ano_inicial, _ano_final)
 
+    log("Processando dados para mapa de aridez com IA...")
     mapaIA_path = processar_dados_aridez(_ano_inicial, _ano_final, _localdataName, _graficos, _NomeLocal)
-    
+
+    log("Calculando RAI e gerando gráfico...")
     calcular_e_gerar_grafico_rai(_balanco, _precipitacao_df, _graficos)
 
+    log("Obtendo caminhos dos gráficos finais...")
     grafico_precipitacao_path, grafico_rai_path, grafico_aridez_path, mapaIA_path = obter_caminhos_graficos(
-        latitude, longitude, _res,_NomeLocal, _ano_inicial, _ano_final
+        latitude, longitude, _res, _NomeLocal, _ano_inicial, _ano_final
     )
 
-    # Dados necessários para a recomendação de irrigação
     dados_ET = _balanco["ET"]
     dados_PET = _balanco["PET"]
     dados_precipitacao = _precipitacao_df["Precipitacao"]
-    anos = _balanco["Ano"]  # Extrair os anos do DataFrame _balanco
+    anos = _balanco["Ano"]
 
-    # Obter recomendações de irrigação
+    log("Gerando recomendações de irrigação...")
     recomendacoes = recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitacao, anos)
+
+    log("Processamento completo! 🎉")
 
     return {
         "nome_local": _NomeLocal,
@@ -89,5 +95,5 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2022, _a
         "grafico_rai": grafico_rai_path,
         "grafico_aridez": grafico_aridez_path,
         "mapa_IA": mapaIA_path,
-        "recomendacoes": recomendacoes,  # Adiciona as recomendações ao retorno
+        "recomendacoes": recomendacoes,
     }

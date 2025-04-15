@@ -13,11 +13,27 @@ resultados_globais = {}
 
 def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id):
     try:
-        stop_event.clear()  # Certifique-se de que o evento de parada está limpo
-        resultados = processar_dados(latitude, longitude, cultura, estagio)
-        resultados_globais[thread_id] = resultados  # Salva os resultados na variável global
+        stop_event.clear()
+        resultados_globais[thread_id] = {"logs": [], "resultados": None}
+
+        def log(msg):
+            print(msg)
+            resultados_globais[thread_id]["logs"].append(msg)
+
+        # Exemplo: substitua prints por log()
+        log("Iniciando processamento...")
+        resultados = processar_dados(latitude, longitude, cultura, estagio, log=log)
+        resultados_globais[thread_id]["resultados"] = resultados
     except Exception as e:
+        resultados_globais[thread_id]["logs"].append(f"Erro: {str(e)}")
         print(f"Erro ao baixar dados: {e}")
+
+@main.route("/status", methods=["GET"])
+def status():
+    thread_id = request.args.get("thread_id")
+    logs = resultados_globais.get(thread_id, {}).get("logs", [])
+    return jsonify({"logs": logs})
+
 
 @main.route("/", methods=["GET"])
 def index():
@@ -30,20 +46,15 @@ def iniciar_carregamento():
     cultura = request.form.get("cultura")
     estagio = request.form.get("estagio")
 
-    # Gera um ID único para a thread
     thread_id = f"{latitude}_{longitude}_{cultura}_{estagio}"
 
-    # Inicia o processo em uma nova thread
+    print(f"Thread ID recebido: {thread_id}")
+
     thread = threading.Thread(target=baixar_dados_thread, args=(latitude, longitude, cultura, estagio, thread_id))
     thread.start()
-    thread.join()  # Aguarda o término do processamento
 
-    # Verifica se o stop_event foi acionado
-    if stop_event.is_set():
-        return render_template("form.html")
-
-    # Redireciona para a página de resultados, passando o ID da thread
-    return redirect(url_for("main.resultados", thread_id=thread_id))
+    # Retorna JSON com o ID da thread, sem esperar o processamento
+    return jsonify({"thread_id": thread_id})
 
 @main.route("/resultados", methods=["GET"])
 def resultados():

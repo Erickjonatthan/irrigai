@@ -29,6 +29,9 @@ def gerar_grafico_balanco_hidrico(df, ano_inicial, ano_final, nome_local, pasta_
     """
     Gera gráfico de balanço hídrico com ET, PET e Déficit ao longo dos anos.
     """
+    if df.empty:
+        return None
+
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # Grupos de barras
@@ -59,7 +62,6 @@ def gerar_grafico_balanco_hidrico(df, ano_inicial, ano_final, nome_local, pasta_
 
     print(f"Gráfico de balanço hídrico salvo em: {caminho}")
     return caminho
-
 def gerar_grafico_precipitacao(series_precipitacao, ano_inicial, ano_final, nome_local, pasta_saida):
     """
     Gera e salva um gráfico de barras com a precipitação média anual de uma área.
