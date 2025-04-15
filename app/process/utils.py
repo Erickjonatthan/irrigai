@@ -83,10 +83,8 @@ def excluir_tasks_appeears(api, head, log=print):
         for task in tasks:
             task_id = task.get("task_id")
             if task_id:
-                log(f"Excluindo task {task_id}...")
                 delete_response = requests.delete(f"{api}task/{task_id}", headers=head)
                 delete_response.raise_for_status()
-                log(f"Task {task_id} excluída com sucesso.")
     except requests.RequestException as e:
         log(f"Erro ao excluir tasks no AppEEARS: {e}")
 
