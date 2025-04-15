@@ -71,7 +71,7 @@ def gerenciar_cache_parametros(inDir, parametros_atual, api, head, log=print):
 
 def excluir_tasks_appeears(api, head, log=print):
     """
-    Exclui todas as tasks realizadas no AppEEARS.
+    Exclui apenas as tasks realizadas no AppEEARS cujo nome começa com 'BALANCO_HIDRICO_'.
     """
     try:
         # Obter a lista de tasks
@@ -79,12 +79,14 @@ def excluir_tasks_appeears(api, head, log=print):
         response.raise_for_status()
         tasks = response.json()
 
-        # Iterar sobre as tasks e excluí-las
+        # Iterar sobre as tasks e excluir apenas as que começam com 'BALANCO_HIDRICO_'
         for task in tasks:
             task_id = task.get("task_id")
-            if task_id:
+            task_name = task.get("task_name", "")  # Supondo que o nome da task esteja no campo 'task_name'
+            if task_id and task_name.startswith("BALANCO_HIDRICO_"):
                 delete_response = requests.delete(f"{api}task/{task_id}", headers=head)
                 delete_response.raise_for_status()
+                log(f"Task '{task_name}' excluída com sucesso.")
     except requests.RequestException as e:
         log(f"Erro ao excluir tasks no AppEEARS: {e}")
 

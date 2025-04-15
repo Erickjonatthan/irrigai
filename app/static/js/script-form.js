@@ -141,10 +141,13 @@ document.addEventListener("DOMContentLoaded", () => {
           log.includes("Processamento completo")
         );
 
-        // Atualiza a barra de progresso
-        const progresso = Math.min((logs.length / 20) * 100, 100); // Supondo 10 etapas
-        progressBar.style.width = `${progresso}%`;
-        progressBar.setAttribute("aria-valuenow", progresso);
+        // Verifica se o cancelamento foi solicitado
+        if (!cancelamentoSolicitado) {
+          // Atualiza a barra de progresso
+          const progresso = Math.min((logs.length / 20) * 100, 100); // Supondo 10 etapas
+          progressBar.style.width = `${progresso}%`;
+          progressBar.setAttribute("aria-valuenow", progresso);
+        }
 
         if (cancelamentoSolicitado) {
           const cancelamentoLogs = logs.filter(
@@ -204,8 +207,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   stopButton.addEventListener("click", function () {
     const logContainer = document.getElementById("logStatus");
+    const progressBar = document.getElementById("progressBar"); // Obtém a barra de progresso
     logContainer.textContent = "Cancelando...";
     cancelamentoSolicitado = true;
+
+    // Atualiza a barra de progresso para 95%
+    progressBar.style.width = "95%";
+    progressBar.setAttribute("aria-valuenow", 95);
+
+    // Adiciona evento para impedir atualização da página
+    window.addEventListener("beforeunload", bloquearAtualizacao);
 
     // REMOVE O THREAD_ID DO LOCALSTORAGE
     localStorage.removeItem("thread_id_em_andamento");
@@ -217,6 +228,18 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch((error) => {
         console.error("Erro ao parar o carregamento:", error);
         logContainer.textContent = "[Erro ao tentar cancelar]";
+      })
+      .finally(() => {
+        // Remove o bloqueio após o cancelamento ser concluído
+        setTimeout(() => {
+          window.removeEventListener("beforeunload", bloquearAtualizacao);
+        }, 1500);
       });
   });
+
+  // Função para bloquear atualização da página
+  function bloquearAtualizacao(event) {
+    event.preventDefault();
+    event.returnValue = "O processo está sendo cancelado. Tem certeza que deseja sair?";
+  }
 });
