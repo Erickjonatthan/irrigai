@@ -76,9 +76,28 @@ def resultados():
 @main.route("/parar-carregamento", methods=["POST"])
 def parar_carregamento():
     stop_event.set()  # Sinaliza para parar o processo
-    # Apaga o conteúdo da pasta cache_data
+
+    # Caminho para a pasta de cache
     cache_dir = "app/static/cache_data"
+    parametros_cache_path = os.path.join(cache_dir, "parametros_cache.json")
+
+    # Atualiza o log para todas as threads em andamento
+    for thread_id, data in resultados_globais.items():
+        data["logs"].append("Carregamento interrompido pelo usuário. Limpando cache...")
+
     if os.path.exists(cache_dir):
-        shutil.rmtree(cache_dir)
-        os.makedirs(cache_dir)
-    return jsonify({"status": "Carregamento interrompido e cache limpo"})
+        # Itera sobre os arquivos e pastas dentro de cache_data
+        for item in os.listdir(cache_dir):
+            item_path = os.path.join(cache_dir, item)
+            # Remove tudo, exceto o arquivo parametros_cache.json
+            if item_path != parametros_cache_path:
+                if os.path.isfile(item_path):
+                    os.remove(item_path)
+                elif os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+
+    # Atualiza o log após limpar o cache
+    for thread_id, data in resultados_globais.items():
+        data["logs"].append("Cache limpo, exceto o arquivo de parâmetros.")
+
+    return jsonify({"status": "Carregamento interrompido e cache limpo, exceto o arquivo de parâmetros."})

@@ -120,42 +120,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function buscarLogs(threadId) {
     const logContainer = document.getElementById("logStatus");
-  
+    const progressBar = document.getElementById("progressBar");
+
     fetch(`/status?thread_id=${threadId}`)
       .then((res) => res.json())
       .then((data) => {
         const logs = data.logs || [];
         let ultimoLog = logs[logs.length - 1] || "Iniciando...";
-  
+
         const cancelado = logs.some(
           (log) =>
             log.includes("cancelada") ||
             log.includes("interrompido") ||
             log.includes("Processo interrompido pelo usuário") ||
-            log.includes("Erro")
+            log.includes("Erro") ||
+            log.includes("Cache limpo")
         );
-  
+
         const completo = logs.some((log) =>
           log.includes("Processamento completo")
         );
-  
+
+        // Atualiza a barra de progresso
+        const progresso = Math.min((logs.length / 20) * 100, 100); // Supondo 10 etapas
+        progressBar.style.width = `${progresso}%`;
+        progressBar.setAttribute("aria-valuenow", progresso);
+
         if (cancelamentoSolicitado) {
-          // Mostra apenas logs relacionados ao cancelamento
           const cancelamentoLogs = logs.filter(
             (log) =>
-              log.includes("cancelada") ||
-              log.includes("interrompido") ||
-              log.includes("Processo interrompido pelo usuário")
+              log.includes("Cancelada") ||
+              log.includes("Interrompido") ||
+              log.includes("Processo interrompido pelo usuário") ||
+              log.includes("Erro") ||
+              log.includes("Cache limpo")
           );
-  
+
           if (cancelamentoLogs.length > 0) {
             ultimoLog = cancelamentoLogs[cancelamentoLogs.length - 1];
             logContainer.textContent = ultimoLog;
           } else {
-            logContainer.textContent = "Cancelando..."; // fallback
+            logContainer.textContent = "Cancelando...";
           }
-  
-          // Se algum log confirmar cancelamento, encerrar o polling
+
           if (cancelado) {
             clearTimeout(statusInterval);
             setTimeout(() => {
@@ -165,17 +172,18 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             statusInterval = setTimeout(() => buscarLogs(threadId), 2000);
           }
-  
-          return; // Evita continuar abaixo se já estamos lidando com cancelamento
+
+          return;
         }
-  
+
         logContainer.textContent = ultimoLog;
-  
+
         if (completo || cancelado) {
           clearTimeout(statusInterval);
-          localStorage.removeItem("thread_id_em_andamento"); // Remove ao terminar
-  
+          localStorage.removeItem("thread_id_em_andamento");
+
           if (completo) {
+            progressBar.style.width = "100%"; // Completa a barra
             window.location.href = `/resultados?thread_id=${threadId}`;
           } else {
             setTimeout(() => {
@@ -193,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
         logContainer.textContent = "[Erro ao buscar logs]";
       });
   }
-  
+
   stopButton.addEventListener("click", function () {
     const logContainer = document.getElementById("logStatus");
     logContainer.textContent = "Cancelando...";

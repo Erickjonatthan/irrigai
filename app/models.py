@@ -10,7 +10,7 @@ import climateservaccess as ca
 _user = os.getenv('USER_ENV_VAR', '')
 _password = os.getenv('PASSWORD_ENV_VAR', '')
 
-def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2022, _ano_final=2024, log=print):
+def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2022, _ano_final=2023, log=print):
     _res = 10
     inDir = 'app/static/cache_data'
     api = 'https://appeears.earthdatacloud.nasa.gov/api/'
@@ -28,22 +28,25 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2022, _a
         "res": _res
     }
 
-    gerenciar_cache_parametros(inDir, parametros_atual, log=log)
+    head = obter_token_autenticacao(api, _user, _password, log=log)
+
+    gerenciar_cache_parametros(inDir, parametros_atual, api, head, log=log)
+    
 
     _localdataName, _graficos = criar_diretorios(inDir, latitude, longitude, _res)
 
     _NomeLocal = get_location_name(latitude, longitude, log=log)
-
-    head = obter_token_autenticacao(api, _user, _password, log=log)
-
     _quadrado = ca.getBox(latitude, longitude, _res)
 
     mapa_path, data_Json, geo_json_data = criar_mapa(latitude, longitude, _quadrado, _graficos)
 
+
+    log("Processando dados de balanço hídrico...")
     _balanco, grafico_balanco_hidrico_path = processar_balanco_hidrico(
         _ano_inicial, _ano_final, data_Json, _localdataName, api, head, _graficos, _NomeLocal, log=log
     )
 
+    log("Gerando dados de precipitação...")
     _precipitacao_df, grafico_precipitacao_path = processar_precipitacao(
         _ano_inicial, _ano_final, data_Json, _localdataName, _graficos, _NomeLocal, log=log
     )

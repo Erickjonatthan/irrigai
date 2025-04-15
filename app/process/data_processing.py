@@ -38,10 +38,10 @@ def processar_balanco_hidrico(_ano_inicial, _ano_final, data_Json, _localdataNam
 
     for i in range(_ano_inicial, _ano_final + 1):
         if stop_event.is_set():
-            log(f"Processo interrompido pelo usuário antes de processar o ano {i}.")
+            print(f"Processo interrompido pelo usuário antes de processar o ano {i}.")
             break
 
-        log(f"Processando ano: {i}")
+        print(f"Processando ano: {i}")
         et_series, pet_series = balanco_hidrico_ano(i, data_Json, _localdataName, api, head, stop_event, tarefas_criadas, log=log)
         if stop_event.is_set():
             log(f"Processo interrompido pelo usuário durante o processamento do ano {i}.")
@@ -88,7 +88,7 @@ def processar_precipitacao(_ano_inicial, _ano_final, data_Json, _localdataName, 
             log(f"Processo interrompido pelo usuário antes de processar a precipitação do ano {i}.")
             break
 
-        log(f"Processando precipitação para o ano: {i}")
+        print(f"Processando precipitação para o ano: {i}")
         precip_total = precipitacao_ano_chirps(i, data_Json, _localdataName, stop_event, log=log)
         if stop_event.is_set():
             log(f"Processo interrompido pelo usuário durante o processamento da precipitação do ano {i}.")

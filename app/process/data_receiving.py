@@ -26,7 +26,7 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head, stop_event, t
 
     # Verificar se os dados já existem localmente
     if os.path.exists(statistics_file):
-        log(f"Carregando dados de {ano} localmente...")
+        print(f"Carregando dados de {ano} localmente...")
         try:
             return processar_dados_localmente(statistics_file)
         except Exception as e:
@@ -49,7 +49,7 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head, stop_event, t
         tarefas_criadas.append(task_id)
 
         aguardar_tarefa(task_id, api, head, stop_event, log=log)
-        baixar_arquivos(task_id, api, head, _appEEARsDir, log=log)
+        baixar_arquivos(task_id, api, head, _appEEARsDir)
         return processar_dados_localmente(statistics_file)
     except Exception as e:
         if not stop_event.is_set():
@@ -120,14 +120,14 @@ def aguardar_tarefa(task_id, api, head, stop_event, log=print):
             log(f"Processo interrompido pelo usuário durante a execução da tarefa {task_id}. Cancelando a tarefa no AppEEARS...")
             cancelar_tarefa(task_id, api, head)  # Cancela a tarefa
             return
-        log(f"Status: {_status}")
+        print(f"Status: {_status}")
         time.sleep(intervalo - ((time.time() - starttime) % intervalo))
         _status = status(task_id, api, head)
     if _status != 'done':
         raise RuntimeError(f"Tarefa {task_id} não foi concluída com sucesso.")
 
 
-def baixar_arquivos(task_id, api, head, _appEEARsDir, log=print):
+def baixar_arquivos(task_id, api, head, _appEEARsDir):
     """
     Baixa os arquivos gerados pela tarefa.
     """
@@ -136,7 +136,6 @@ def baixar_arquivos(task_id, api, head, _appEEARsDir, log=print):
         filename = f['file_name'].split('/')[-1]
         filepath = os.path.join(_appEEARsDir, filename)
         if not os.path.exists(filepath):
-            log(f"Baixando {filename}")
             dl = requests.get(f'{api}bundle/{task_id}/{f["file_id"]}', headers=head, stream=True)
             with open(filepath, 'wb') as file:
                 for data in dl.iter_content(chunk_size=8192):
@@ -190,7 +189,7 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName, stop_event, log=prin
             log(f"Processo interrompido pelo usuário antes de baixar o arquivo para o ano {ano}.")
             return 0
 
-        log(f"Baixando {url} ...")
+        print(f"Baixando {url} ...")
         try:
             r = requests.get(url, stream=True)
             if r.status_code != 200:
@@ -203,7 +202,7 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName, stop_event, log=prin
                         log(f"Processo interrompido pelo usuário durante o download do ano {ano}.")
                         return 0
                     f.write(chunk)
-            log(f"Arquivo {destino_tif} baixado com sucesso.")
+            print(f"Arquivo {destino_tif} baixado com sucesso.")
         except Exception as e:
             if not stop_event.is_set():
                 log(f"Erro ao baixar o arquivo {url}: {e}")
@@ -221,7 +220,7 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName, stop_event, log=prin
         gdf = gpd.GeoDataFrame({'geometry': [shape(geometria)]}, crs="EPSG:4326")
         ds_clip = ds.rio.clip(gdf.geometry, gdf.crs, drop=True)
         media_anual = ds_clip.mean().item()
-        log(f"Média anual de precipitação: {media_anual:.2f} mm")
+        print(f"Média anual de precipitação: {media_anual:.2f} mm")
     except Exception as e:
         if not stop_event.is_set():
             log(f"Erro ao processar o arquivo {destino_tif}: {e}")
