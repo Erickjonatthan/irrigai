@@ -27,7 +27,7 @@ def risco_desertificacao(ai):
 
 def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitacao, anos):
     """
-    Fornece recomendações de irrigação em linguagem acessível com base nos dados médios mensais.
+    Fornece recomendações de irrigação em linguagem acessível com base nos dados anuais.
     """
 
     cultura = cultura.lower()
@@ -45,7 +45,7 @@ def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitac
 
     kc = kc_values[cultura][estagio]
 
-    # Criar DataFrame com os dados
+    # Criar DataFrame com os dados anuais
     df = pd.DataFrame({
         "Ano": anos,
         "ET": dados_ET,
@@ -53,45 +53,32 @@ def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitac
         "Precipitacao": dados_precipitacao
     })
 
-    # Adicionar coluna de mês
-    df['Mes'] = (df.index % 12) + 1
-
-
-    # Calcular a média mensal ao longo de todos os anos
-    resumo = df.groupby('Mes').mean()
-
-
     mensagens = []
-    nomes_meses = {
-        1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 5: "Maio", 6: "Junho",
-        7: "Julho", 8: "Agosto", 9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"
-    }
 
-    for mes, linha in resumo.iterrows():
+    for _, linha in df.iterrows():
+        ano = linha["Ano"]
         pet = linha["PET"]
         et = linha["ET"]
         prec = linha["Precipitacao"]
         etc = pet * kc
         deficit = etc - prec
 
-
         if deficit > 0:
             msg = (
-                f"📅 {nomes_meses[mes]} (média de {anos.min()} a {anos.max()}): Sua PET média foi de {pet:.1f} mm. "
+                f"📅 Ano {ano}: Sua PET foi de {pet:.1f} mm. "
                 f"Como sua cultura é {cultura} no estágio {estagio} (Kc = {kc}), "
                 f"a planta precisa de aproximadamente {etc:.1f} mm. "
                 f"A precipitação foi de {prec:.1f} mm, resultando em um déficit de {deficit:.1f} mm. "
-                f"💧 Recomendado realizar irrigação nesse mês."
+                f"💧 Recomendado realizar irrigação neste ano."
             )
         else:
             msg = (
-                f"📅 {nomes_meses[mes]} (média de {anos.min()} a {anos.max()}): PET média de {pet:.1f} mm e precipitação de {prec:.1f} mm. "
+                f"📅 Ano {ano}: PET de {pet:.1f} mm e precipitação de {prec:.1f} mm. "
                 f"Não há déficit hídrico significativo — irrigação provavelmente não necessária."
             )
         mensagens.append(msg)
 
     return mensagens
-
 def calcular_e_classificar_indices_aridez(_balanco, _ano_inicial, _ano_final):
     """
     Calcula os índices de aridez, realiza classificações e imprime os resultados.

@@ -16,7 +16,7 @@ _user = os.getenv('USER_ENV_VAR', '')
 _password = os.getenv('PASSWORD_ENV_VAR', '')
 
 # Função principal para processar os dados
-def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2001, _ano_final=2023):
+def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2022, _ano_final=2024):
     # Configurações iniciais
     _res = 10
     inDir = 'app/static/cache_data'
@@ -56,6 +56,10 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2001, _a
     _precipitacao_df, grafico_precipitacao_path = processar_precipitacao(
         _ano_inicial, _ano_final, data_Json, _localdataName, _graficos, _NomeLocal
     )
+
+    # print no console o inicio do dados do balanco
+    print(_balanco.head())
+    print(_precipitacao_df.head())
 
     # Calcula os índices de aridez e gera gráficos
     calcular_indices_e_gerar_graficos(_balanco, _precipitacao_df, _ano_inicial, _ano_final, _graficos)

@@ -15,7 +15,7 @@ def status(id_tarefa, api, head):
 
 def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head):
     """
-    Baixa os dados de ET e PET para o ano especificado e retorna duas Series com os valores mensais.
+    Baixa os dados de ET e PET para o ano especificado e retorna os totais anuais.
     """
     produto_usado = "MOD16A3GF.061"
     bandas_usadas = ['ET_500m', 'PET_500m']
@@ -30,7 +30,7 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head):
             return processar_dados_localmente(statistics_file)
         except Exception as e:
             print(f"Erro ao processar o arquivo local {statistics_file}: {e}")
-            return pd.Series(dtype=float), pd.Series(dtype=float)
+            return 0, 0
 
     # Caso os dados não existam, criar e processar a tarefa
     try:
@@ -43,24 +43,22 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head):
         return processar_dados_localmente(statistics_file)
     except Exception as e:
         print(f"Erro ao processar dados para o ano {ano}: {e}")
-        return pd.Series(dtype=float), pd.Series(dtype=float)
+        return 0, 0
 
 
 def processar_dados_localmente(statistics_file):
     """
-    Processa os dados locais do arquivo CSV e retorna as séries de ET e PET.
+    Processa os dados locais do arquivo CSV e retorna os totais anuais de ET e PET como Series.
     """
     df = pd.read_csv(statistics_file)
     if 'Dataset' not in df.columns or 'Mean' not in df.columns:
         raise ValueError("Colunas 'Dataset' ou 'Mean' ausentes no arquivo de estatísticas.")
     
-    et_mean = df[df['Dataset'] == 'ET_500m']["Mean"].fillna(0).iloc[0]
-    pet_mean = df[df['Dataset'] == 'PET_500m']["Mean"].fillna(0).iloc[0]
+    et_total = df[df['Dataset'] == 'ET_500m']["Mean"].fillna(0).iloc[0]
+    pet_total = df[df['Dataset'] == 'PET_500m']["Mean"].fillna(0).iloc[0]
 
-    et_series = pd.Series([et_mean / 12] * 12, index=range(1, 13))
-    pet_series = pd.Series([pet_mean / 12] * 12, index=range(1, 13))
-    return et_series, pet_series
-
+    # Retornar os valores como Series
+    return pd.Series([et_total], index=[0]), pd.Series([pet_total], index=[0])
 
 def criar_tarefa(api, produto_usado, bandas_usadas, task_name, data_Json, _appEEARsDir, ano, head):
     """
@@ -162,15 +160,7 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName):
     """
     Processa os dados anuais de precipitação do CHIRPS-2.0 (global_annual, resolução p05)
     para um determinado ano, recortando pela área de interesse (definida em data_Json)
-    e retornando a média anual de precipitação (mm) na área.
-
-    Parâmetros:
-      - ano: inteiro (ex.: 2025)
-      - data_Json: GeoJSON (dicionário) representando a área de interesse
-      - _localdataName: pasta local para armazenar os dados
-
-    Retorna:
-      - Uma pandas Series com a média anual de precipitação (mm) na área
+    e retornando o total anual de precipitação (mm) na área.
     """
 
     # Criar diretório para armazenar os arquivos do ano
@@ -189,14 +179,14 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName):
             r = requests.get(url, stream=True)
             if r.status_code != 200:
                 print(f"Erro ao baixar {url}. Código de status: {r.status_code}")
-                return pd.Series([])
+                return 0
             with open(destino_tif, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
             print(f"Arquivo {destino_tif} baixado com sucesso.")
         except Exception as e:
             print(f"Erro ao baixar o arquivo {url}: {e}")
-            return pd.Series([])
+            return 0
 
     # Converter data_Json para GeoDataFrame
     try:
@@ -207,7 +197,7 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName):
         gdf = gpd.GeoDataFrame({'geometry': [shape(geometria)]}, crs="EPSG:4326")
     except Exception as e:
         print(f"Erro na conversão do data_Json: {e}")
-        return pd.Series([])
+        return 0
 
     # Processar o arquivo GeoTIFF
     try:
@@ -221,14 +211,15 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName):
         ds_clip = ds.rio.clip(gdf.geometry, gdf.crs, drop=True)
         print(f"Recorte realizado. Valores após o recorte: min={ds_clip.min().item()}, max={ds_clip.max().item()}")
 
-        # Cálculo da média espacial de precipitação
+        # Cálculo da média espacial de precipitação anual
         media_anual = ds_clip.mean().item()
         print(f"Média anual de precipitação: {media_anual:.2f} mm")
     except Exception as e:
         print(f"Erro ao processar o arquivo {destino_tif}: {e}")
-        return pd.Series([])
+        return 0
 
-    return pd.Series([media_anual])
+    # Retornar o total anual diretamente
+    return media_anual
 
 def processar_precipitacao(_ano_inicial, _ano_final, data_Json, _localdataName, _graficos, _NomeLocal):
     """
@@ -241,9 +232,8 @@ def processar_precipitacao(_ano_inicial, _ano_final, data_Json, _localdataName, 
             print("Processo interrompido pelo usuário no loop principal.")
             break
         print(f"Processando precipitação para o ano: {i}")
-        precip_series = precipitacao_ano_chirps(i, data_Json, _localdataName)
-        if isinstance(precip_series, pd.Series) and not precip_series.empty:
-            precip_total = precip_series.iloc[0]
+        precip_total = precipitacao_ano_chirps(i, data_Json, _localdataName)
+        if precip_total != 0:
             _precipitacao_df.loc[len(_precipitacao_df)] = [i, precip_total]
         else:
             print(f"Erro ao recuperar dados de precipitação para o ano {i}")
