@@ -30,9 +30,6 @@ def criar_mapa(latitude, longitude, _quadrado, _graficos):
         ]
     }
 
-    json_string = json.dumps(data_Json, indent=2)
-    print(json_string)
-
     quadrado = Polygon(_quadrado)
     quadrado_gdf = gpd.GeoSeries(quadrado)
     geo_json_data = quadrado_gdf.to_json()

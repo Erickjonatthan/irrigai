@@ -2,7 +2,7 @@ import json
 import os
 import requests
 
-def get_location_name(latitude, longitude):
+def get_location_name(latitude, longitude, log=print):
     """
     Obtém o nome da localização a partir das coordenadas geográficas usando a API Nominatim.
     
@@ -23,6 +23,7 @@ def get_location_name(latitude, longitude):
         if "address" not in data:
             raise Exception("Resposta da API não contém o campo 'address'")
         location_name = data["address"]
+        log(f"Localização obtida: {location_name.get('city', 'Desconhecido')} - {location_name.get('state', 'Desconhecido')} - {location_name.get('country', 'Desconhecido')}")
         return f"{location_name.get('region', 'Desconhecido')} - {location_name.get('country', 'Desconhecido')}"
     except requests.exceptions.RequestException as e:
         return f"Erro de conexão com a API Nominatim: {e}"
@@ -30,7 +31,7 @@ def get_location_name(latitude, longitude):
         return f"Erro ao processar a resposta da API Nominatim: {e}"
     
 
-def gerenciar_cache_parametros(inDir, parametros_atual):
+def gerenciar_cache_parametros(inDir, parametros_atual, log=print):
     """
     Gerencia o cache de parâmetros, verificando se há alterações e limpando o cache se necessário.
     """
@@ -43,7 +44,7 @@ def gerenciar_cache_parametros(inDir, parametros_atual):
 
         # Comparar os parâmetros atuais com os salvos
         if parametros_atual != parametros_salvos:
-            print("Parâmetros diferentes detectados. Limpando o cache...")
+            log("Parâmetros diferentes detectados. Limpando o cache...")
             # Apagar todo o conteúdo da pasta inDir
             for root, dirs, files in os.walk(inDir, topdown=False):
                 for file in files:
@@ -51,13 +52,13 @@ def gerenciar_cache_parametros(inDir, parametros_atual):
                 for dir in dirs:
                     os.rmdir(os.path.join(root, dir))
     else:
-        print("Nenhum cache encontrado. Continuando com a execução...")
+        log("Nenhum cache encontrado. Continuando com a execução...")
 
     # Salvar os parâmetros atuais no cache
     with open(parametros_cache_path, "w") as f:
         json.dump(parametros_atual, f)
 
-def obter_token_autenticacao(api, _user, _password):
+def obter_token_autenticacao(api, _user, _password, log=print):
     """
     Obtém o token de autenticação da API usando as credenciais fornecidas.
     """
@@ -65,8 +66,7 @@ def obter_token_autenticacao(api, _user, _password):
         token_response = requests.post(f'{api}login', auth=(_user, _password)).json()
         token = token_response['token']
         head = {'Authorization': f'Bearer {token}'}
-        print(token_response, token)
         return head
     except Exception as e:
-        print(f"Erro ao obter o token de autenticação: {e}")
+        log(f"Erro ao obter o token de autenticação: {e}")
         raise

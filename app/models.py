@@ -28,30 +28,24 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2022, _a
         "res": _res
     }
 
-    log("Verificando cache de parâmetros...")
-    gerenciar_cache_parametros(inDir, parametros_atual)
+    gerenciar_cache_parametros(inDir, parametros_atual, log=log)
 
     _localdataName, _graficos = criar_diretorios(inDir, latitude, longitude, _res)
 
-    _NomeLocal = get_location_name(latitude, longitude)
-    log(f"Nome da região detectada: {_NomeLocal}")
+    _NomeLocal = get_location_name(latitude, longitude, log=log)
 
-    log("Autenticando com a API da NASA...")
-    head = obter_token_autenticacao(api, _user, _password)
+    head = obter_token_autenticacao(api, _user, _password, log=log)
 
     _quadrado = ca.getBox(latitude, longitude, _res)
 
-    log("Gerando mapa inicial...")
     mapa_path, data_Json, geo_json_data = criar_mapa(latitude, longitude, _quadrado, _graficos)
 
-    log("Processando balanço hídrico...")
     _balanco, grafico_balanco_hidrico_path = processar_balanco_hidrico(
-        _ano_inicial, _ano_final, data_Json, _localdataName, api, head, _graficos, _NomeLocal
+        _ano_inicial, _ano_final, data_Json, _localdataName, api, head, _graficos, _NomeLocal, log=log
     )
 
-    log("Processando precipitação...")
     _precipitacao_df, grafico_precipitacao_path = processar_precipitacao(
-        _ano_inicial, _ano_final, data_Json, _localdataName, _graficos, _NomeLocal
+        _ano_inicial, _ano_final, data_Json, _localdataName, _graficos, _NomeLocal, log=log
     )
 
     log("Calculando índices de aridez...")
