@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const form = document.querySelector("form");
   const loadingModalElement = document.getElementById("loadingModal");
   const loadingModal = new bootstrap.Modal(loadingModalElement); // Instância única do modal
   const stopButton = document.getElementById("stopButton");
@@ -102,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
       .then((res) => res.json())
       .then((data) => {
+        cancelamentoSolicitado = false; // Reseta a flag de cancelamento
         const threadId = data.thread_id;
         buscarLogs(threadId); // Inicia polling
       });

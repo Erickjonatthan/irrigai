@@ -22,9 +22,14 @@ def get_location_name(latitude, longitude, log=print):
         data = response.json()
         if "address" not in data:
             raise Exception("Resposta da API não contém o campo 'address'")
-        location_name = data["address"]
-        log(f"Localização obtida: {location_name.get('city', 'Desconhecido')} - {location_name.get('state', 'Desconhecido')} - {location_name.get('country', 'Desconhecido')}")
-        return f"{location_name.get('region', 'Desconhecido')} - {location_name.get('country', 'Desconhecido')}"
+        
+        # Obtém os campos relevantes da resposta
+        address = data["address"]
+        cidade = address.get("city") or address.get("town") or address.get("village") or "Localização desconhecida"
+        estado = address.get("state", "")
+        log(f"Localização obtida: {cidade} - {estado}")
+        
+        return f"{cidade} - {estado}"
     except requests.exceptions.RequestException as e:
         return f"Erro de conexão com a API Nominatim: {e}"
     except Exception as e:
