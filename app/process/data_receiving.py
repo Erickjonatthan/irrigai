@@ -31,7 +31,8 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head, stop_event):
         try:
             return processar_dados_localmente(statistics_file)
         except Exception as e:
-            print(f"Erro ao processar o arquivo local {statistics_file}: {e}")
+            if not stop_event.is_set():
+                print(f"Erro ao processar o arquivo local {statistics_file}: {e}")
             return 0, 0
 
     # Caso os dados não existam, criar e processar a tarefa
@@ -48,7 +49,8 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head, stop_event):
         baixar_arquivos(task_id, api, head, _appEEARsDir)
         return processar_dados_localmente(statistics_file)
     except Exception as e:
-        print(f"Erro ao processar dados para o ano {ano}: {e}")
+        if not stop_event.is_set():
+            print(f"Erro ao processar dados para o ano {ano}: {e}")
         return 0, 0
 
 
@@ -177,7 +179,7 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName, stop_event):
 
     # Criar diretório para armazenar os arquivos do ano
     pasta_ano = os.path.join(_localdataName, f"CHIRPS_annual")
-    os.makedirs(pasta_ano, exist_ok=True)
+    os.makedirs(pasta_ano, existindo=True)
 
     # Nome do arquivo anual
     nome_tif = f"chirps-v2.0.{ano}.tif"
@@ -194,7 +196,8 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName, stop_event):
         try:
             r = requests.get(url, stream=True)
             if r.status_code != 200:
-                print(f"Erro ao baixar {url}. Código de status: {r.status_code}")
+                if not stop_event.is_set():
+                    print(f"Erro ao baixar {url}. Código de status: {r.status_code}")
                 return 0
             with open(destino_tif, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=8192):
@@ -204,7 +207,8 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName, stop_event):
                     f.write(chunk)
             print(f"Arquivo {destino_tif} baixado com sucesso.")
         except Exception as e:
-            print(f"Erro ao baixar o arquivo {url}: {e}")
+            if not stop_event.is_set():
+                print(f"Erro ao baixar o arquivo {url}: {e}")
             return 0
 
     # Processar o arquivo GeoTIFF
@@ -221,7 +225,8 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName, stop_event):
         media_anual = ds_clip.mean().item()
         print(f"Média anual de precipitação: {media_anual:.2f} mm")
     except Exception as e:
-        print(f"Erro ao processar o arquivo {destino_tif}: {e}")
+        if not stop_event.is_set():
+            print(f"Erro ao processar o arquivo {destino_tif}: {e}")
         return 0
 
     return media_anual

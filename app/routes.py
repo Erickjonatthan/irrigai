@@ -20,13 +20,21 @@ def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id):
             print(msg)
             resultados_globais[thread_id]["logs"].append(msg)
 
-        # Exemplo: substitua prints por log()
         log("Iniciando processamento...")
         resultados = processar_dados(latitude, longitude, cultura, estagio, log=log)
+
+        # Verifica se o processo foi interrompido
+        if stop_event.is_set():
+            log("Processo interrompido pelo usuário. Nenhum dado será retornado.")
+            return
+
+        # Armazena os resultados apenas se o processo não foi interrompido
         resultados_globais[thread_id]["resultados"] = resultados
     except Exception as e:
-        resultados_globais[thread_id]["logs"].append(f"Erro: {str(e)}")
-        print(f"Erro ao baixar dados: {e}")
+        # Verifica se o erro não foi causado pela interrupção do usuário
+        if not stop_event.is_set():
+            resultados_globais[thread_id]["logs"].append(f"Erro: {str(e)}")
+            print(f"Erro ao baixar dados: {e}")
 
 @main.route("/status", methods=["GET"])
 def status():

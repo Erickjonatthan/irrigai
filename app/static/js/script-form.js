@@ -83,8 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 500); // Delay para garantir que o modal carregue
   });
 
-  let statusInterval = null;
-  let currentThreadId = null;
+  let statusInterval = null; // Variável global para controlar o polling
 
   document.querySelector("form").addEventListener("submit", function (e) {
     e.preventDefault();
@@ -116,9 +115,10 @@ function buscarLogs(threadId) {
             const logs = data.logs || [];
             logContainer.textContent = logs[logs.length - 1] || "Iniciando..."; // Exibe apenas o último log
 
-            if (!logs.some(log => log.includes("Processamento completo"))) {
-                setTimeout(() => buscarLogs(threadId), 2000);
+            if (!logs.some(log => log.includes("Processamento completo")) && isModalVisible) {
+                statusInterval = setTimeout(() => buscarLogs(threadId), 2000);
             } else {
+                clearInterval(statusInterval); // Para o polling ao concluir
                 window.location.href = `/resultados?thread_id=${threadId}`;
             }
         })
@@ -147,16 +147,16 @@ function buscarLogs(threadId) {
 
   stopButton.addEventListener("click", function () {
     fetch("/parar-carregamento", {
-      method: "POST",
+        method: "POST",
     })
-      .then((response) => response.json())
-      .then(() => {
-        clearInterval(statusInterval); // PARA o polling
-        loadingModal.hide(); // Fecha o modal de carregamento
-        isModalVisible = false;
-      })
-      .catch((error) => {
-        console.error("Erro ao parar o carregamento:", error);
-      });
+        .then((response) => response.json())
+        .then(() => {
+            clearTimeout(statusInterval); // Para o polling imediatamente
+            loadingModal.hide(); // Fecha o modal de carregamento
+            isModalVisible = false;
+        })
+        .catch((error) => {
+            console.error("Erro ao parar o carregamento:", error);
+        });
   });
 });

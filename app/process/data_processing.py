@@ -36,10 +36,19 @@ def processar_balanco_hidrico(_ano_inicial, _ano_final, data_Json, _localdataNam
     _balanco = pd.DataFrame(columns=["Ano", "ET", "PET", "Deficit"])
 
     for i in range(_ano_inicial, _ano_final + 1):
+        if stop_event.is_set():
+            print(f"Processo interrompido pelo usuário antes de processar o ano {i}.")
+            break
+
         print(f"Processando ano: {i}")
         et_series, pet_series = balanco_hidrico_ano(i, data_Json, _localdataName, api, head, stop_event)
+        if stop_event.is_set():
+            print(f"Processo interrompido pelo usuário durante o processamento do ano {i}.")
+            break
+
         if not (isinstance(et_series, pd.Series) and isinstance(pet_series, pd.Series)):
-            print(f"Erro ao recuperar dados de ET/PET para o ano {i}")
+            if not stop_event.is_set():
+                print(f"Erro ao recuperar dados de ET/PET para o ano {i}")
             continue
 
         et_total = et_series.sum()
@@ -47,6 +56,10 @@ def processar_balanco_hidrico(_ano_inicial, _ano_final, data_Json, _localdataNam
         deficit = pet_total - et_total
 
         _balanco.loc[len(_balanco)] = [i, et_total, pet_total, deficit]
+
+    if _balanco.empty:
+        print("Nenhum dado de balanço hídrico foi processado.")
+        return None, None
 
     _balanco["Ano"] = _balanco["Ano"].astype(int)
 
@@ -60,6 +73,7 @@ def processar_balanco_hidrico(_ano_inicial, _ano_final, data_Json, _localdataNam
 
     return _balanco, grafico_balanco_hidrico_path
 
+
 def processar_precipitacao(_ano_inicial, _ano_final, data_Json, _localdataName, _graficos, _NomeLocal):
     """
     Processa os dados de precipitação para os anos fornecidos e gera o gráfico correspondente.
@@ -67,12 +81,25 @@ def processar_precipitacao(_ano_inicial, _ano_final, data_Json, _localdataName, 
     _precipitacao_df = pd.DataFrame(columns=["Ano", "Precipitacao"])
 
     for i in range(_ano_inicial, _ano_final + 1):
+        if stop_event.is_set():
+            print(f"Processo interrompido pelo usuário antes de processar a precipitação do ano {i}.")
+            break
+
         print(f"Processando precipitação para o ano: {i}")
         precip_total = precipitacao_ano_chirps(i, data_Json, _localdataName, stop_event)
+        if stop_event.is_set():
+            print(f"Processo interrompido pelo usuário durante o processamento da precipitação do ano {i}.")
+            break
+
         if precip_total != 0:
             _precipitacao_df.loc[len(_precipitacao_df)] = [i, precip_total]
         else:
-            print(f"Erro ao recuperar dados de precipitação para o ano {i}")
+            if not stop_event.is_set():
+                print(f"Erro ao recuperar dados de precipitação para o ano {i}")
+
+    if _precipitacao_df.empty:
+        print("Nenhum dado de precipitação foi processado.")
+        return None, None
 
     _precipitacao_df["Ano"] = _precipitacao_df["Ano"].astype(int)
 
