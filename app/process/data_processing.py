@@ -1,225 +1,64 @@
-import os
-import time
+import numpy as np
 import pandas as pd
-import requests
-import gzip
-import shutil
-import rioxarray
-import geopandas as gpd
-from shapely.geometry import shape
 from app.globals import stop_event  # Atualize a importação
-from app.process.graphics import gerar_grafico_precipitacao
+from app.process.data_receiving import balanco_hidrico_ano, precipitacao_ano_chirps
+from app.process.graphics import PlotGrafico, gerar_grafico_balanco_hidrico, gerar_grafico_precipitacao, mostraGraficoDoAno
 
-def status(id_tarefa, api, head):
-    return requests.get(f'{api}task/{id_tarefa}', headers=head).json()['status']
-
-def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head):
+def processar_dados_aridez(_ano_inicial, _ano_final, _localdataName, _graficos, _NomeLocal):
     """
-    Baixa os dados de ET e PET para o ano especificado e retorna os totais anuais.
+    Processa os dados de aridez para os anos fornecidos, calcula a média e gera o mapa de IA.
     """
-    produto_usado = "MOD16A3GF.061"
-    bandas_usadas = ['ET_500m', 'PET_500m']
-    task_name = f"BALANCO_HIDRICO_{ano}"
-    _appEEARsDir = os.path.join(_localdataName, task_name)
-    statistics_file = os.path.join(_appEEARsDir, "MOD16A3GF-061-Statistics.csv")
-
-    # Verificar se os dados já existem localmente
-    if os.path.exists(statistics_file):
-        print(f"Carregando dados de {ano} localmente...")
+    _dado = []
+    for i in range(_ano_inicial, _ano_final + 1):  # Inclui todos os anos no intervalo
         try:
-            return processar_dados_localmente(statistics_file)
-        except Exception as e:
-            print(f"Erro ao processar o arquivo local {statistics_file}: {e}")
-            return 0, 0
-
-    # Caso os dados não existam, criar e processar a tarefa
-    try:
-        task_id = criar_tarefa(api, produto_usado, bandas_usadas, task_name, data_Json, _appEEARsDir, ano, head)
-        if not task_id:
-            raise ValueError(f"Falha ao criar a tarefa para o ano {ano}.")
-        
-        aguardar_tarefa(task_id, api, head)
-        baixar_arquivos(task_id, api, head, _appEEARsDir)
-        return processar_dados_localmente(statistics_file)
-    except Exception as e:
-        print(f"Erro ao processar dados para o ano {ano}: {e}")
-        return 0, 0
-
-
-def processar_dados_localmente(statistics_file):
-    """
-    Processa os dados locais do arquivo CSV e retorna os totais anuais de ET e PET como Series.
-    """
-    df = pd.read_csv(statistics_file)
-    if 'Dataset' not in df.columns or 'Mean' not in df.columns:
-        raise ValueError("Colunas 'Dataset' ou 'Mean' ausentes no arquivo de estatísticas.")
+            print(f"Processando o ano {i}...")
+            arid_data = mostraGraficoDoAno(i, _localdataName)
+            _dado.append(arid_data)
+        except FileNotFoundError as e:
+            print(f"Erro ao processar o ano {i}: {e}")
     
-    et_total = df[df['Dataset'] == 'ET_500m']["Mean"].fillna(0).iloc[0]
-    pet_total = df[df['Dataset'] == 'PET_500m']["Mean"].fillna(0).iloc[0]
-
-    # Retornar os valores como Series
-    return pd.Series([et_total], index=[0]), pd.Series([pet_total], index=[0])
-
-def criar_tarefa(api, produto_usado, bandas_usadas, task_name, data_Json, _appEEARsDir, ano, head):
-    """
-    Cria uma tarefa na API para baixar os dados.
-    """
-    lst_response = requests.get(f'{api}product/{produto_usado}').json()
-    projections = requests.get(f'{api}spatial/proj').json()
-
-    proj = next((p['Name'] for p in projections if p['Name'] == 'geographic'), None)
-    prodLayer = [{"layer": l, "product": produto_usado} for l in lst_response if l in bandas_usadas]
-
-    task = {
-        'task_type': 'area',
-        'task_name': task_name,
-        'params': {
-            'dates': [{
-                'startDate': '01-01',
-                'endDate': '12-31',
-                'yearRange': [ano, ano],
-                'recurring': True
-            }],
-            'layers': prodLayer,
-            'output': {
-                'format': {'type': 'geotiff'},
-                'projection': proj
-            },
-            'geo': data_Json
-        }
-    }
-
-    os.makedirs(_appEEARsDir, exist_ok=True)
-    print(f"Enviando tarefa para {ano}...")
-    task_response = requests.post(f'{api}task', json=task, headers=head).json()
-    print(f"Resposta da API ao criar tarefa para {ano}: {task_response}")
-
-    return task_response.get('task_id')
-
-
-def aguardar_tarefa(task_id, api, head):
-    """
-    Aguarda a conclusão da tarefa na API.
-    """
-    starttime = time.time()
-    intervalo = 20.0
-    _status = status(task_id, api, head)
-    while _status != 'done':
-        print(f"Status: {_status}")
-        time.sleep(intervalo - ((time.time() - starttime) % intervalo))
-        _status = status(task_id, api, head)
-    if _status != 'done':
-        raise RuntimeError(f"Tarefa {task_id} não foi concluída com sucesso.")
-
-
-def baixar_arquivos(task_id, api, head, _appEEARsDir):
-    """
-    Baixa os arquivos gerados pela tarefa.
-    """
-    bundle = requests.get(f'{api}bundle/{task_id}', headers=head).json()
-    for f in bundle['files']:
-        filename = f['file_name'].split('/')[-1]
-        filepath = os.path.join(_appEEARsDir, filename)
-        if not os.path.exists(filepath):
-            print(f"Baixando {filename}")
-            dl = requests.get(f'{api}bundle/{task_id}/{f["file_id"]}', headers=head, stream=True)
-            with open(filepath, 'wb') as file:
-                for data in dl.iter_content(chunk_size=8192):
-                    file.write(data)
-
-                    
-def baixar_e_descompactar(url, destino_gz, destino_tif):
-    """
-    Baixa um arquivo se não existir e descompacta (.gz para .tif).
-    """
-    if not os.path.exists(destino_gz):
-        print(f"Baixando {url} ...")
-        r = requests.get(url, stream=True)
-        if r.status_code != 200:
-            print(f"Erro ao baixar {url}. Código de status: {r.status_code}")
-            return False
-        with open(destino_gz, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
+    # Calcula a média dos dados de aridez ao longo dos anos processados
+    if _dado:  # Verifica se há dados processados
+        _final = np.mean(_dado, axis=0)
+    
+        # Gera o mapa usando os dados médios
+        mapaIA_path = PlotGrafico(_final, f"{_ano_inicial}-{_ano_final}", _NomeLocal, _graficos)
+        print(f"Mapa de IA salvo em: {mapaIA_path}")
+        return mapaIA_path
     else:
-        print(f"Arquivo {destino_gz} já existe.")
-    
-    # Descompactar se o .tif ainda não existir
-    if not os.path.exists(destino_tif):
-        try:
-            with gzip.open(destino_gz, 'rb') as f_in:
-                with open(destino_tif, 'wb') as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-            print(f"Descompactado para {destino_tif}.")
-        except Exception as e:
-            print(f"Erro ao descompactar {destino_gz}: {e}")
-            return False
-    return True
+        print("Nenhum dado foi processado. Verifique os arquivos de entrada.")
+        return None
 
-def precipitacao_ano_chirps(ano, data_Json, _localdataName):
+def processar_balanco_hidrico(_ano_inicial, _ano_final, data_Json, _localdataName, api, head, _graficos, _NomeLocal):
     """
-    Processa os dados anuais de precipitação do CHIRPS-2.0 (global_annual, resolução p05)
-    para um determinado ano, recortando pela área de interesse (definida em data_Json)
-    e retornando o total anual de precipitação (mm) na área.
+    Processa o balanço hídrico para os anos fornecidos e gera o gráfico correspondente.
     """
+    _balanco = pd.DataFrame(columns=["Ano", "ET", "PET", "Deficit"])
 
-    # Criar diretório para armazenar os arquivos do ano
-    pasta_ano = os.path.join(_localdataName, f"CHIRPS_annual")
-    os.makedirs(pasta_ano, exist_ok=True)
+    for i in range(_ano_inicial, _ano_final + 1):
+        print(f"Processando ano: {i}")
+        et_series, pet_series = balanco_hidrico_ano(i, data_Json, _localdataName, api, head, stop_event)
+        if not (isinstance(et_series, pd.Series) and isinstance(pet_series, pd.Series)):
+            print(f"Erro ao recuperar dados de ET/PET para o ano {i}")
+            continue
 
-    # Nome do arquivo anual
-    nome_tif = f"chirps-v2.0.{ano}.tif"
-    destino_tif = os.path.join(pasta_ano, nome_tif)
-    url = f"https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_annual/tifs/{nome_tif}"
+        et_total = et_series.sum()
+        pet_total = pet_series.sum()
+        deficit = pet_total - et_total
 
-    # Baixar o arquivo se não existir
-    if not os.path.exists(destino_tif):
-        print(f"Baixando {url} ...")
-        try:
-            r = requests.get(url, stream=True)
-            if r.status_code != 200:
-                print(f"Erro ao baixar {url}. Código de status: {r.status_code}")
-                return 0
-            with open(destino_tif, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            print(f"Arquivo {destino_tif} baixado com sucesso.")
-        except Exception as e:
-            print(f"Erro ao baixar o arquivo {url}: {e}")
-            return 0
+        _balanco.loc[len(_balanco)] = [i, et_total, pet_total, deficit]
 
-    # Converter data_Json para GeoDataFrame
-    try:
-        if data_Json.get("type").lower() == "featurecollection":
-            geometria = data_Json["features"][0]["geometry"]
-        else:
-            geometria = data_Json
-        gdf = gpd.GeoDataFrame({'geometry': [shape(geometria)]}, crs="EPSG:4326")
-    except Exception as e:
-        print(f"Erro na conversão do data_Json: {e}")
-        return 0
+    _balanco["Ano"] = _balanco["Ano"].astype(int)
 
-    # Processar o arquivo GeoTIFF
-    try:
-        ds = rioxarray.open_rasterio(destino_tif)
-        print(f"Arquivo {destino_tif} carregado. Valores brutos: min={ds.min().item()}, max={ds.max().item()}")
+    grafico_balanco_hidrico_path = gerar_grafico_balanco_hidrico(
+        _balanco,            # DataFrame com os dados
+        _ano_inicial,        # Ano inicial
+        _ano_final,          # Ano final
+        _NomeLocal,          # Nome da localização (string)
+        _graficos            # Caminho da pasta de saída
+    )
 
-        # Substituir valores de "NoData" (-9999.0) por NaN
-        ds = ds.where(ds != -9999.0)
-
-        # Clip dos dados para a área definida
-        ds_clip = ds.rio.clip(gdf.geometry, gdf.crs, drop=True)
-        print(f"Recorte realizado. Valores após o recorte: min={ds_clip.min().item()}, max={ds_clip.max().item()}")
-
-        # Cálculo da média espacial de precipitação anual
-        media_anual = ds_clip.mean().item()
-        print(f"Média anual de precipitação: {media_anual:.2f} mm")
-    except Exception as e:
-        print(f"Erro ao processar o arquivo {destino_tif}: {e}")
-        return 0
-
-    # Retornar o total anual diretamente
-    return media_anual
+    return _balanco, grafico_balanco_hidrico_path
 
 def processar_precipitacao(_ano_inicial, _ano_final, data_Json, _localdataName, _graficos, _NomeLocal):
     """
@@ -228,11 +67,8 @@ def processar_precipitacao(_ano_inicial, _ano_final, data_Json, _localdataName, 
     _precipitacao_df = pd.DataFrame(columns=["Ano", "Precipitacao"])
 
     for i in range(_ano_inicial, _ano_final + 1):
-        if stop_event.is_set():
-            print("Processo interrompido pelo usuário no loop principal.")
-            break
         print(f"Processando precipitação para o ano: {i}")
-        precip_total = precipitacao_ano_chirps(i, data_Json, _localdataName)
+        precip_total = precipitacao_ano_chirps(i, data_Json, _localdataName, stop_event)
         if precip_total != 0:
             _precipitacao_df.loc[len(_precipitacao_df)] = [i, precip_total]
         else:

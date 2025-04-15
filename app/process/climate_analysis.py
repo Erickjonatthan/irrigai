@@ -79,6 +79,8 @@ def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitac
         mensagens.append(msg)
 
     return mensagens
+
+
 def calcular_e_classificar_indices_aridez(_balanco, _ano_inicial, _ano_final):
     """
     Calcula os índices de aridez, realiza classificações e imprime os resultados.

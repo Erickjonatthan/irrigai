@@ -38,6 +38,10 @@ def iniciar_carregamento():
     thread.start()
     thread.join()  # Aguarda o término do processamento
 
+    # Verifica se o stop_event foi acionado
+    if stop_event.is_set():
+        return render_template("form.html")
+
     # Redireciona para a página de resultados, passando o ID da thread
     return redirect(url_for("main.resultados", thread_id=thread_id))
 

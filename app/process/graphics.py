@@ -3,6 +3,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
 
+def PlotGrafico(data, name, _NomeLocal, _graficos):
+    """
+    Plota um gráfico de aridez com base nos dados fornecidos.
+    """
+    plt.title(f'{_NomeLocal}' + name)
+    plt.imshow(data, cmap='jet_r', vmin=0, vmax=1)
+    plt.colorbar(label='Aridez')
+    mascara = np.where(data < 0.2, 0, np.nan)
+    plt.imshow(mascara, cmap='gray', vmin=0, vmax=1, alpha=1)
+    branco = np.where(data == 1, 0, np.nan)
+    plt.imshow(branco, cmap='gray_r', vmin=0, vmax=1, alpha=1)
+    plt.axis('off')
+    
+    plt.legend([], [], frameon=False)
+    
+    output_path = os.path.join(_graficos, f"mapaIA{name}.png")
+    plt.savefig(output_path, format="png")
+    return output_path
+
+
 def gerar_grafico_balanco_hidrico(df, ano_inicial, ano_final, nome_local, pasta_saida):
     """
     Gera gráfico de balanço hídrico com ET, PET e Déficit ao longo dos anos.
@@ -37,9 +57,6 @@ def gerar_grafico_balanco_hidrico(df, ano_inicial, ano_final, nome_local, pasta_
 
     print(f"Gráfico de balanço hídrico salvo em: {caminho}")
     return caminho
-
-import matplotlib.pyplot as plt
-import os
 
 def gerar_grafico_precipitacao(series_precipitacao, ano_inicial, ano_final, nome_local, pasta_saida):
     """
@@ -151,3 +168,20 @@ def gerar_grafico_indice_aridez_unep(_balanco, _ano_inicial, _ano_final, _grafic
     plt.title('Aridity index in the chosen region')
     plt.legend()
     plt.savefig(os.path.join(_graficos, "IA.png"), format="png")
+
+def calcular_e_gerar_grafico_rai(_balanco, _precipitacao_df, _graficos):
+    """
+    Calcula o índice de anomalia de chuva (RAI) e gera o gráfico correspondente.
+    """
+    # Cálculo do índice de anomalia de chuva (RAI)
+    media_precipitacao = _precipitacao_df["Precipitacao"].mean()
+    desvio_precipitacao = _precipitacao_df["Precipitacao"].std()
+
+    _balanco["RAI"] = _precipitacao_df["Precipitacao"].apply(
+        lambda precipitacao: (precipitacao - media_precipitacao) / desvio_precipitacao * 100
+    )
+
+    # Gráfico do índice de anomalia de chuva (RAI)
+    _balanco.plot(kind='bar', x='Ano', y='RAI', title='Rain Anomaly Index (RAI)', xlabel='Anos', ylabel='RAI', color='blue')
+    plt.savefig(os.path.join(_graficos, "RAI.png"), format="png")
+    print("Gráfico do índice de anomalia de chuva (RAI) salvo com sucesso.")

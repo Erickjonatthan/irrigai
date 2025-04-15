@@ -1,16 +1,11 @@
 import os
-import matplotlib
-matplotlib.use('Agg')
-import climateservaccess as ca
-import requests
-from app.process.utils import gerenciar_cache_parametros, get_location_name, obter_token_autenticacao
 from app.process.climate_analysis import calcular_e_classificar_indices_aridez, recomendar_irrigacao
+from app.process.data_processing import processar_balanco_hidrico, processar_dados_aridez, processar_precipitacao
 from app.process.file_operations import criar_diretorios, obter_caminhos_graficos
-from app.process.visualization import calcular_e_gerar_grafico_rai, processar_balanco_hidrico, processar_dados_aridez
-from app.process.data_processing import processar_precipitacao
+from app.process.graphics import calcular_e_gerar_grafico_rai, calcular_indices_e_gerar_graficos, gerar_grafico_indice_aridez_unep
 from app.process.map_operations import criar_mapa
-from app.process.graphics import calcular_indices_e_gerar_graficos, gerar_grafico_indice_aridez_unep
-
+from app.process.utils import gerenciar_cache_parametros, get_location_name, obter_token_autenticacao
+import climateservaccess as ca
 
 _user = os.getenv('USER_ENV_VAR', '')
 _password = os.getenv('PASSWORD_ENV_VAR', '')
@@ -56,10 +51,6 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2022, _a
     _precipitacao_df, grafico_precipitacao_path = processar_precipitacao(
         _ano_inicial, _ano_final, data_Json, _localdataName, _graficos, _NomeLocal
     )
-
-    # print no console o inicio do dados do balanco
-    print(_balanco.head())
-    print(_precipitacao_df.head())
 
     # Calcula os índices de aridez e gera gráficos
     calcular_indices_e_gerar_graficos(_balanco, _precipitacao_df, _ano_inicial, _ano_final, _graficos)
