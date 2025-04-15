@@ -48,8 +48,6 @@ def iniciar_carregamento():
 
     thread_id = f"{latitude}_{longitude}_{cultura}_{estagio}"
 
-    print(f"Thread ID recebido: {thread_id}")
-
     thread = threading.Thread(target=baixar_dados_thread, args=(latitude, longitude, cultura, estagio, thread_id))
     thread.start()
 
