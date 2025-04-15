@@ -11,6 +11,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let isModalVisible = false;
   let cancelamentoSolicitado = false;
 
+  const threadEmAndamento = localStorage.getItem("thread_id_em_andamento");
+  if (threadEmAndamento) {
+    isModalVisible = true;
+    loadingModal.show();
+    buscarLogs(threadEmAndamento); // Retoma o polling
+  }
+
   // Função para atualizar o endereço com base nas coordenadas
   function atualizarEndereco(lat, lon) {
     fetch(
@@ -101,8 +108,12 @@ document.addEventListener("DOMContentLoaded", () => {
     })
       .then((res) => res.json())
       .then((data) => {
-        cancelamentoSolicitado = false; // Reseta a flag de cancelamento
+        cancelamentoSolicitado = false;
         const threadId = data.thread_id;
+
+        // SALVA O THREAD_ID NO LOCALSTORAGE
+        localStorage.setItem("thread_id_em_andamento", threadId);
+
         buscarLogs(threadId); // Inicia polling
       });
   });
@@ -159,9 +170,19 @@ document.addEventListener("DOMContentLoaded", () => {
   
         logContainer.textContent = ultimoLog;
   
-        if (completo) {
+        if (completo || cancelado) {
           clearTimeout(statusInterval);
-          window.location.href = `/resultados?thread_id=${threadId}`;
+          localStorage.removeItem("thread_id_em_andamento"); // Remove ao terminar
+  
+          if (completo) {
+            window.location.href = `/resultados?thread_id=${threadId}`;
+          } else {
+            setTimeout(() => {
+              loadingModal.hide();
+              isModalVisible = false;
+            }, 1500);
+          }
+          return;
         } else {
           statusInterval = setTimeout(() => buscarLogs(threadId), 2000);
         }
@@ -172,28 +193,13 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
   
-
-  // Adiciona o aviso ao tentar sair da página apenas se o modal de carregamento estiver ativo
-  window.addEventListener("beforeunload", function (event) {
-    if (isModalVisible) {
-      // Exibe o aviso apenas se o modal estiver ativo
-      event.preventDefault();
-      event.returnValue =
-        "Você tem certeza? Todo o progresso atual será perdido.";
-    }
-  });
-
-  // Envia a solicitação para parar o carregamento apenas se o usuário realmente sair
-  window.addEventListener("unload", function () {
-    if (isModalVisible) {
-      navigator.sendBeacon("/parar-carregamento"); // Usa sendBeacon para garantir que a solicitação seja enviada
-    }
-  });
-
   stopButton.addEventListener("click", function () {
     const logContainer = document.getElementById("logStatus");
     logContainer.textContent = "Cancelando...";
-    cancelamentoSolicitado = true; // Ativa a flag
+    cancelamentoSolicitado = true;
+
+    // REMOVE O THREAD_ID DO LOCALSTORAGE
+    localStorage.removeItem("thread_id_em_andamento");
 
     fetch("/parar-carregamento", {
       method: "POST",
