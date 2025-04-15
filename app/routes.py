@@ -66,9 +66,12 @@ def iniciar_carregamento():
 def resultados():
     thread_id = request.args.get("thread_id")
     resultados = resultados_globais.get(thread_id, {})
+    
     if not resultados:
         return "Nenhum resultado encontrado. Certifique-se de que o processamento foi concluído.", 400
-    return render_template("resultado.html", **resultados)
+    
+    # Passe apenas o conteúdo de 'resultados' para o template
+    return render_template("resultado.html", **resultados.get("resultados", {}))
 
 @main.route("/parar-carregamento", methods=["POST"])
 def parar_carregamento():

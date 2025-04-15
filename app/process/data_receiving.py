@@ -178,8 +178,7 @@ def precipitacao_ano_chirps(ano, data_Json, _localdataName, stop_event, log=prin
 
     # Criar diretório para armazenar os arquivos do ano
     pasta_ano = os.path.join(_localdataName, f"CHIRPS_annual")
-    os.makedirs(pasta_ano, existindo=True)
-
+    os.makedirs(pasta_ano, exist_ok=True)
     # Nome do arquivo anual
     nome_tif = f"chirps-v2.0.{ano}.tif"
     destino_tif = os.path.join(pasta_ano, nome_tif)

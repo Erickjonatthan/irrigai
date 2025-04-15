@@ -131,7 +131,8 @@ document.addEventListener("DOMContentLoaded", () => {
           (log) =>
             log.includes("cancelada") ||
             log.includes("interrompido") ||
-            log.includes("Processo interrompido pelo usuário")
+            log.includes("Processo interrompido pelo usuário") ||
+            log.includes("Erro")
         );
   
         const completo = logs.some((log) =>
