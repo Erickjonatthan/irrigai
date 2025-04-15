@@ -66,7 +66,7 @@ def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2022, _a
     calcular_e_gerar_grafico_rai(_balanco, _precipitacao_df, _graficos)
 
     grafico_precipitacao_path, grafico_rai_path, grafico_aridez_path, mapaIA_path = obter_caminhos_graficos(
-        latitude, longitude, _res, _ano_inicial, _ano_final
+        latitude, longitude, _res,_NomeLocal, _ano_inicial, _ano_final
     )
 
     # Dados necessários para a recomendação de irrigação

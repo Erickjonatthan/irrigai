@@ -1,4 +1,6 @@
 import os
+import matplotlib
+matplotlib.use('Agg')  # Define o backend não interativo
 import matplotlib.pyplot as plt
 import numpy as np
 import rasterio

@@ -11,12 +11,12 @@ def criar_diretorios(inDir, latitude, longitude, area):
         os.makedirs(_graficos)
     return _localdataName, _graficos
 
-def obter_caminhos_graficos(latitude, longitude, _res, _ano_inicial, _ano_final):
+def obter_caminhos_graficos(latitude, longitude, _res, nome_local, _ano_inicial, _ano_final):
     """
     Gera os caminhos para os gráficos e mapas gerados.
     """
     grafico_precipitacao_path = os.path.join(
-        f"cache_data/{latitude}_{longitude}_{_res}/resultados/grafico_precipitacao_Região_Nordeste_-_Brasil_{_ano_inicial}_{_ano_final}.png"
+        f"cache_data/{latitude}_{longitude}_{_res}/resultados/grafico_precipitacao_{nome_local.replace(' ', '_')}_{_ano_inicial}_{_ano_final}.png"
     ).replace("\\", "/")
     grafico_rai_path = os.path.join(
         f"cache_data/{latitude}_{longitude}_{_res}/resultados/RAI.png"
