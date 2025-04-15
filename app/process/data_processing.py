@@ -23,34 +23,49 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head):
     _appEEARsDir = os.path.join(_localdataName, task_name)
     statistics_file = os.path.join(_appEEARsDir, "MOD16A3GF-061-Statistics.csv")
 
+    # Verificar se os dados já existem localmente
     if os.path.exists(statistics_file):
         print(f"Carregando dados de {ano} localmente...")
         try:
-            df = pd.read_csv(statistics_file)
-            print(f"Conteúdo do arquivo CSV:\n{df.head()}")  # Exibe as primeiras linhas do CSV
-
-            # Verificar se as colunas 'Dataset' e 'Mean' existem
-            if 'Dataset' not in df.columns or 'Mean' not in df.columns:
-                print(f"Erro: O arquivo {statistics_file} não contém as colunas esperadas ('Dataset' e 'Mean').")
-                return pd.Series(dtype=float), pd.Series(dtype=float)
-            
-            # Filtrar os dados com base na coluna 'Dataset'
-            et_mean = df[df['Dataset'] == 'ET_500m']["Mean"].fillna(0).iloc[0]
-            pet_mean = df[df['Dataset'] == 'PET_500m']["Mean"].fillna(0).iloc[0]
-            print(f"ET (média anual): {et_mean}, PET (média anual): {pet_mean}")
-
-            # Dividir os valores anuais por 12 para obter médias mensais
-            et_series = pd.Series([et_mean / 12] * 12, index=range(1, 13))
-            pet_series = pd.Series([pet_mean / 12] * 12, index=range(1, 13))
-            print(f"ET (média mensal):\n{et_series}")
-            print(f"PET (média mensal):\n{pet_series}")
-
-            return et_series, pet_series
+            return processar_dados_localmente(statistics_file)
         except Exception as e:
-            print(f"Erro ao processar o arquivo {statistics_file}: {e}")
+            print(f"Erro ao processar o arquivo local {statistics_file}: {e}")
             return pd.Series(dtype=float), pd.Series(dtype=float)
 
-    # Criar tarefa
+    # Caso os dados não existam, criar e processar a tarefa
+    try:
+        task_id = criar_tarefa(api, produto_usado, bandas_usadas, task_name, data_Json, _appEEARsDir, ano, head)
+        if not task_id:
+            raise ValueError(f"Falha ao criar a tarefa para o ano {ano}.")
+        
+        aguardar_tarefa(task_id, api, head)
+        baixar_arquivos(task_id, api, head, _appEEARsDir)
+        return processar_dados_localmente(statistics_file)
+    except Exception as e:
+        print(f"Erro ao processar dados para o ano {ano}: {e}")
+        return pd.Series(dtype=float), pd.Series(dtype=float)
+
+
+def processar_dados_localmente(statistics_file):
+    """
+    Processa os dados locais do arquivo CSV e retorna as séries de ET e PET.
+    """
+    df = pd.read_csv(statistics_file)
+    if 'Dataset' not in df.columns or 'Mean' not in df.columns:
+        raise ValueError("Colunas 'Dataset' ou 'Mean' ausentes no arquivo de estatísticas.")
+    
+    et_mean = df[df['Dataset'] == 'ET_500m']["Mean"].fillna(0).iloc[0]
+    pet_mean = df[df['Dataset'] == 'PET_500m']["Mean"].fillna(0).iloc[0]
+
+    et_series = pd.Series([et_mean / 12] * 12, index=range(1, 13))
+    pet_series = pd.Series([pet_mean / 12] * 12, index=range(1, 13))
+    return et_series, pet_series
+
+
+def criar_tarefa(api, produto_usado, bandas_usadas, task_name, data_Json, _appEEARsDir, ano, head):
+    """
+    Cria uma tarefa na API para baixar os dados.
+    """
     lst_response = requests.get(f'{api}product/{produto_usado}').json()
     projections = requests.get(f'{api}spatial/proj').json()
 
@@ -69,7 +84,7 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head):
             }],
             'layers': prodLayer,
             'output': {
-                'format': {'type': 'geotiff'},  # Alterado para 'geotiff'
+                'format': {'type': 'geotiff'},
                 'projection': proj
             },
             'geo': data_Json
@@ -79,17 +94,15 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head):
     os.makedirs(_appEEARsDir, exist_ok=True)
     print(f"Enviando tarefa para {ano}...")
     task_response = requests.post(f'{api}task', json=task, headers=head).json()
-
-    # Adicionar logs para depuração
     print(f"Resposta da API ao criar tarefa para {ano}: {task_response}")
 
-    task_id = task_response.get('task_id')
+    return task_response.get('task_id')
 
-    if not task_id:
-        print(f"Erro ao criar tarefa para {ano}. Resposta da API: {task_response}")
-        return pd.Series(dtype=float), pd.Series(dtype=float)
 
-    # Esperar a tarefa finalizar
+def aguardar_tarefa(task_id, api, head):
+    """
+    Aguarda a conclusão da tarefa na API.
+    """
     starttime = time.time()
     intervalo = 20.0
     _status = status(task_id, api, head)
@@ -97,58 +110,26 @@ def balanco_hidrico_ano(ano, data_Json, _localdataName, api, head):
         print(f"Status: {_status}")
         time.sleep(intervalo - ((time.time() - starttime) % intervalo))
         _status = status(task_id, api, head)
-
-    # Download dos arquivos
-    if _status == 'done':
-        try:
-            bundle = requests.get(f'{api}bundle/{task_id}', headers=head).json()
-            for f in bundle['files']:
-                filename = f['file_name'].split('/')[-1]
-                filepath = os.path.join(_appEEARsDir, filename)
-                if not os.path.exists(filepath):
-                    print(f"Baixando {filename}")
-                    dl = requests.get(f'{api}bundle/{task_id}/{f["file_id"]}', headers=head, stream=True)
-                    with open(filepath, 'wb') as file:
-                        for data in dl.iter_content(chunk_size=8192):
-                            file.write(data)
-        except Exception as e:
-            print(f"Erro ao baixar arquivos da tarefa: {e}")
-            return pd.Series(dtype=float), pd.Series(dtype=float)
-
-    # Processar os dados no formato 'geotiff'
-    try:
-        import rasterio
-        et_series = []
-        pet_series = []
-        for f in os.listdir(_appEEARsDir):
-            if 'ET_500m' in f:
-                with rasterio.open(os.path.join(_appEEARsDir, f)) as src:
-                    et_mean = src.read(1).mean()
-                    et_series.append(et_mean)
-                    print(f"ET (GeoTIFF): {et_mean}")
-            elif 'PET_500m' in f:
-                with rasterio.open(os.path.join(_appEEARsDir, f)) as src:
-                    pet_mean = src.read(1).mean()
-                    pet_series.append(pet_mean)
-                    print(f"PET (GeoTIFF): {pet_mean}")
-
-        # Dividir os valores anuais por 12 para obter médias mensais
-        if len(et_series) == 1:
-            et_series = [et_series[0] / 12] * 12
-        if len(pet_series) == 1:
-            pet_series = [pet_series[0] / 12] * 12
-
-        print(f"ET (média mensal após GeoTIFF):\n{et_series}")
-        print(f"PET (média mensal após GeoTIFF):\n{pet_series}")
-
-        return pd.Series(et_series, index=range(1, 13)), pd.Series(pet_series, index=range(1, 13))
-    except Exception as e:
-        print(f"Erro ao processar arquivos GeoTIFF: {e}")
-        return pd.Series(dtype=float), pd.Series(dtype=float)
+    if _status != 'done':
+        raise RuntimeError(f"Tarefa {task_id} não foi concluída com sucesso.")
 
 
+def baixar_arquivos(task_id, api, head, _appEEARsDir):
+    """
+    Baixa os arquivos gerados pela tarefa.
+    """
+    bundle = requests.get(f'{api}bundle/{task_id}', headers=head).json()
+    for f in bundle['files']:
+        filename = f['file_name'].split('/')[-1]
+        filepath = os.path.join(_appEEARsDir, filename)
+        if not os.path.exists(filepath):
+            print(f"Baixando {filename}")
+            dl = requests.get(f'{api}bundle/{task_id}/{f["file_id"]}', headers=head, stream=True)
+            with open(filepath, 'wb') as file:
+                for data in dl.iter_content(chunk_size=8192):
+                    file.write(data)
 
-
+                    
 def baixar_e_descompactar(url, destino_gz, destino_tif):
     """
     Baixa um arquivo se não existir e descompacta (.gz para .tif).

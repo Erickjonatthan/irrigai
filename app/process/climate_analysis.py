@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 def categoria_climatica(index):
     if index >= 0.65:
@@ -28,14 +29,6 @@ def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitac
     """
     Fornece recomendações de irrigação em linguagem acessível com base nos dados médios mensais.
     """
-    import pandas as pd
-
-    # Prints para depuração
-    print("=== Depuração: Dados de Entrada ===")
-    print(f"Dados ET recebidos:\n{dados_ET}")
-    print(f"Dados PET recebidos:\n{dados_PET}")
-    print(f"Dados de precipitação recebidos:\n{dados_precipitacao}")
-    print(f"Anos recebidos:\n{anos}")
 
     cultura = cultura.lower()
     estagio = estagio.lower()
@@ -51,7 +44,6 @@ def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitac
         raise ValueError("Cultura ou estágio inválido")
 
     kc = kc_values[cultura][estagio]
-    print(f"Kc selecionado para {cultura} no estágio {estagio}: {kc}")
 
     # Criar DataFrame com os dados
     df = pd.DataFrame({
@@ -64,13 +56,10 @@ def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitac
     # Adicionar coluna de mês
     df['Mes'] = (df.index % 12) + 1
 
-    print("=== DataFrame Inicial ===")
-    print(df)
 
     # Calcular a média mensal ao longo de todos os anos
     resumo = df.groupby('Mes').mean()
-    print("=== Resumo Mensal (Média) ===")
-    print(resumo)
+
 
     mensagens = []
     nomes_meses = {
@@ -85,8 +74,6 @@ def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitac
         etc = pet * kc
         deficit = etc - prec
 
-        # Print dos cálculos intermediários
-        print(f"Mês: {nomes_meses[mes]}, PET: {pet}, ET: {et}, Precipitação: {prec}, ETC: {etc}, Déficit: {deficit}")
 
         if deficit > 0:
             msg = (

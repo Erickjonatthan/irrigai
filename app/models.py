@@ -16,7 +16,7 @@ _user = os.getenv('USER_ENV_VAR', '')
 _password = os.getenv('PASSWORD_ENV_VAR', '')
 
 # Função principal para processar os dados
-def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2001, _ano_final=2010):
+def processar_dados(latitude, longitude, cultura, estagio, _ano_inicial=2001, _ano_final=2023):
     # Configurações iniciais
     _res = 10
     inDir = 'app/static/cache_data'
