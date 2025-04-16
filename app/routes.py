@@ -59,7 +59,7 @@ def status():
     head = session["head"]
 
     # Verifica se o token ainda é válido
-    if not verificar_token_valido(api_url,head):
+    if not verificar_token_valido(api_url, head):
         session.pop("head", None)  # Remove o token inválido da sessão
         return jsonify({"error": "Token expirado. Faça login novamente.", "redirect": url_for("main.acesso")}), 401
 
@@ -76,6 +76,10 @@ def index():
 # Rota para a página de acesso
 @main.route("/acesso", methods=["GET"])
 def acesso():
+    # Verifica se o usuário já está autenticado
+    if "head" in session:
+        # Redireciona para o formulário se já estiver logado
+        return redirect(url_for("main.form"))
     return render_template("acesso.html")
 
 # Rota para autenticação
@@ -104,7 +108,16 @@ def autenticar():
 def form():
     if "head" not in session:
         return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso se não estiver autenticado
+
+    head = session["head"]
+
+    # Verifica se o token ainda é válido
+    if not verificar_token_valido(api_url, head):
+        session.pop("head", None)  # Remove o token inválido da sessão
+        return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso
+
     return render_template("form.html")
+
 
 @main.route("/iniciar-carregamento", methods=["POST"])
 def iniciar_carregamento():
@@ -114,7 +127,7 @@ def iniciar_carregamento():
     head = session["head"]
 
     # Verifica se o token ainda é válido
-    if not verificar_token_valido(api_url,head):
+    if not verificar_token_valido(api_url, head):
         session.pop("head", None)  # Remove o token inválido da sessão
         return jsonify({"error": "Token expirado. Faça login novamente.", "redirect": url_for("main.acesso")}), 401
 
@@ -143,8 +156,19 @@ def iniciar_carregamento():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+
 @main.route("/resultados", methods=["GET"])
 def resultados():
+    if "head" not in session:
+        return jsonify({"error": "Usuário não autenticado"}), 401
+
+    head = session["head"]
+
+    # Verifica se o token ainda é válido
+    if not verificar_token_valido(api_url, head):
+        session.pop("head", None)  # Remove o token inválido da sessão
+        return jsonify({"error": "Token expirado. Faça login novamente.", "redirect": url_for("main.acesso")}), 401
+
     thread_id = request.args.get("thread_id")
     resultados = resultados_globais.get(thread_id, {}).get("resultados")
 
@@ -157,11 +181,19 @@ def resultados():
     else:
         return jsonify({"error": "Formato de resultados inválido."}), 500
 
+
 @main.route("/parar-carregamento", methods=["POST"])
 def parar_carregamento():
     if "head" not in session:
         return jsonify({"error": "Usuário não autenticado"}), 401
-    
+
+    head = session["head"]
+
+    # Verifica se o token ainda é válido
+    if not verificar_token_valido(api_url, head):
+        session.pop("head", None)  # Remove o token inválido da sessão
+        return jsonify({"error": "Token expirado. Faça login novamente.", "redirect": url_for("main.acesso")}), 401
+
     stop_event.set()  # Sinaliza para parar o processo
 
     # Caminho para a pasta de cache
