@@ -6,7 +6,7 @@ import os
 from app.models import processar_dados
 from app.globals import stop_event
 from app.globals import api_url
-from app.process.utils import obter_token_autenticacao
+from app.process.utils import obter_token_autenticacao, verificar_token_valido
 from app.dto.dtos import ResultadosDTO
 from app.dto.dtos import ProcessarDadosDTO
 
@@ -56,6 +56,13 @@ def status():
     if "head" not in session:
         return jsonify({"error": "Usuário não autenticado"}), 401
 
+    head = session["head"]
+
+    # Verifica se o token ainda é válido
+    if not verificar_token_valido(api_url,head):
+        session.pop("head", None)  # Remove o token inválido da sessão
+        return jsonify({"error": "Token expirado. Faça login novamente.", "redirect": url_for("main.acesso")}), 401
+
     thread_id = request.args.get("thread_id")
     logs = resultados_globais.get(thread_id, {}).get("logs", [])
     return jsonify({"logs": logs})
@@ -104,6 +111,13 @@ def iniciar_carregamento():
     if "head" not in session:
         return jsonify({"error": "Usuário não autenticado"}), 401
 
+    head = session["head"]
+
+    # Verifica se o token ainda é válido
+    if not verificar_token_valido(api_url,head):
+        session.pop("head", None)  # Remove o token inválido da sessão
+        return jsonify({"error": "Token expirado. Faça login novamente.", "redirect": url_for("main.acesso")}), 401
+
     try:
         # Extrai os dados do formulário
         latitude = request.form.get("latitude")
@@ -116,7 +130,6 @@ def iniciar_carregamento():
             return jsonify({"error": "Todos os campos (latitude, longitude, cultura, estagio) são obrigatórios"}), 400
 
         thread_id = f"{latitude}_{longitude}_{cultura}_{estagio}"
-        head = session["head"]
 
         # Inicia a thread com o DTO
         thread = threading.Thread(

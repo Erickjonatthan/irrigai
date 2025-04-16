@@ -104,3 +104,13 @@ def obter_token_autenticacao(api, _user, _password):
     except Exception as e:
         print(f"Erro ao obter o token de autenticação: {e}")
         raise
+
+def verificar_token_valido(api,head):
+    """
+    Faz uma requisição de teste à API para verificar se o token é válido.
+    """
+    try:
+        response = requests.get(api, headers=head)
+        return response.status_code == 200  # Retorna True se o token for válido
+    except Exception:
+        return False
