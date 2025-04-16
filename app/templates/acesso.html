@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acesso ao Sistema</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to bottom, #e0f7fa, #ffffff);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .form-container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+    }
+    .form-container h1 {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+      width: 100%;
+    }
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+    .form-text {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h1>🔒 Acesso ao Sistema</h1>
+    <form>
+      <div class="mb-3">
+        <label for="usuario" class="form-label">Usuário do Appears</label>
+        <input type="text" class="form-control" id="usuario" placeholder="Digite seu usuário" required>
+      </div>
+      <div class="mb-3">
+        <label for="senha" class="form-label">Senha do Appears</label>
+        <input type="password" class="form-control" id="senha" placeholder="Digite sua senha" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Acessar</button>
+      <p class="form-text">Esqueceu sua senha? <a href="#">Recuperar</a></p>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const usuario = document.getElementById("usuario").value;
+      const senha = document.getElementById("senha").value;
+
+      try {
+        const response = await fetch("/autenticar", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ usuario, senha }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Redireciona para a URL retornada pelo backend
+          window.location.href = data.redirect;
+        } else {
+          alert(data.error || "Erro ao autenticar");
+        }
+      } catch (error) {
+        console.error("Erro:", error);
+        alert("Erro ao conectar ao servidor");
+      }
+    });
+  </script>
+</body>
+</html>

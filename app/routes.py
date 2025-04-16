@@ -4,14 +4,18 @@ import threading
 import shutil
 import os
 from app.models import processar_dados
-from app.globals import stop_event  # Atualize a importação
+from app.globals import stop_event
+from app.globals import api_url
+from app.process.utils import obter_token_autenticacao
+from app.dto.dtos import ResultadosDTO
+from app.dto.dtos import ProcessarDadosDTO
 
 main = Blueprint("main", __name__)
 
 # Variável global para armazenar os resultados
 resultados_globais = {}
 
-def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id):
+def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id, head):
     try:
         stop_event.clear()
         resultados_globais[thread_id] = {"logs": [], "resultados": None}
@@ -21,7 +25,18 @@ def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id):
             resultados_globais[thread_id]["logs"].append(msg)
 
         log("Iniciando processamento...")
-        resultados = processar_dados(latitude, longitude, cultura, estagio, log=log)
+
+        # Cria o DTO
+        dto = ProcessarDadosDTO(
+            latitude=latitude,
+            longitude=longitude,
+            cultura=cultura,
+            estagio=estagio,
+            head=head,
+        )
+
+        # Passa o DTO para a função processar_dados
+        resultados = processar_dados(dto, log=log)
 
         # Verifica se o processo foi interrompido
         if stop_event.is_set():
@@ -38,43 +53,102 @@ def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id):
 
 @main.route("/status", methods=["GET"])
 def status():
+    if "head" not in session:
+        return jsonify({"error": "Usuário não autenticado"}), 401
+
     thread_id = request.args.get("thread_id")
     logs = resultados_globais.get(thread_id, {}).get("logs", [])
     return jsonify({"logs": logs})
 
 
+# Rota para a página inicial
 @main.route("/", methods=["GET"])
 def index():
+    return render_template("index.html")
+
+# Rota para a página de acesso
+@main.route("/acesso", methods=["GET"])
+def acesso():
+    return render_template("acesso.html")
+
+# Rota para autenticação
+@main.route("/autenticar", methods=["POST"])
+def autenticar():
+    data = request.get_json()  # Recebe o JSON do frontend
+    usuario = data.get("usuario")
+    senha = data.get("senha")
+
+    if not usuario or not senha:
+        return jsonify({"error": "Usuário e senha são obrigatórios"}), 400
+
+    try:
+       
+        head = obter_token_autenticacao(api_url, usuario, senha)
+
+        # Armazena o cabeçalho na sessão para uso posterior
+        session["head"] = head
+
+        return jsonify({"message": "Autenticação bem-sucedida", "redirect": url_for("main.form")})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 401
+
+# Rota para o formulário (protegida)
+@main.route("/form", methods=["GET"])
+def form():
+    if "head" not in session:
+        return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso se não estiver autenticado
     return render_template("form.html")
 
 @main.route("/iniciar-carregamento", methods=["POST"])
 def iniciar_carregamento():
-    latitude = float(request.form.get("latitude"))
-    longitude = float(request.form.get("longitude"))
-    cultura = request.form.get("cultura")
-    estagio = request.form.get("estagio")
+    if "head" not in session:
+        return jsonify({"error": "Usuário não autenticado"}), 401
 
-    thread_id = f"{latitude}_{longitude}_{cultura}_{estagio}"
+    try:
+        # Extrai os dados do formulário
+        latitude = request.form.get("latitude")
+        longitude = request.form.get("longitude")
+        cultura = request.form.get("cultura")
+        estagio = request.form.get("estagio")
 
-    thread = threading.Thread(target=baixar_dados_thread, args=(latitude, longitude, cultura, estagio, thread_id))
-    thread.start()
+        # Validação dos campos
+        if not all([latitude, longitude, cultura, estagio]):
+            return jsonify({"error": "Todos os campos (latitude, longitude, cultura, estagio) são obrigatórios"}), 400
 
-    # Retorna JSON com o ID da thread, sem esperar o processamento
-    return jsonify({"thread_id": thread_id})
+        thread_id = f"{latitude}_{longitude}_{cultura}_{estagio}"
+        head = session["head"]
+
+        # Inicia a thread com o DTO
+        thread = threading.Thread(
+            target=baixar_dados_thread,
+            args=(latitude, longitude, cultura, estagio, thread_id, head),
+        )
+        thread.start()
+
+        # Retorna JSON com o ID da thread
+        return jsonify({"thread_id": thread_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 @main.route("/resultados", methods=["GET"])
 def resultados():
     thread_id = request.args.get("thread_id")
-    resultados = resultados_globais.get(thread_id, {})
-    
+    resultados = resultados_globais.get(thread_id, {}).get("resultados")
+
     if not resultados:
-        return "Nenhum resultado encontrado. Certifique-se de que o processamento foi concluído.", 400
-    
-    # Passe apenas o conteúdo de 'resultados' para o template
-    return render_template("resultado.html", **resultados.get("resultados", {}))
+        return jsonify({"error": "Nenhum resultado encontrado. Certifique-se de que o processamento foi concluído."}), 400
+
+    # Verifica se os resultados são do tipo ResultadosDTO
+    if isinstance(resultados, ResultadosDTO):
+        return jsonify(resultados.to_dict())
+    else:
+        return jsonify({"error": "Formato de resultados inválido."}), 500
 
 @main.route("/parar-carregamento", methods=["POST"])
 def parar_carregamento():
+    if "head" not in session:
+        return jsonify({"error": "Usuário não autenticado"}), 401
+    
     stop_event.set()  # Sinaliza para parar o processo
 
     # Caminho para a pasta de cache

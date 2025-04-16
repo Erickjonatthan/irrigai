@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Monitoramento Hídrico e Climatológico</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to bottom, #e0f7fa, #ffffff);
+    }
+    .hero {
+      background: url('https://source.unsplash.com/1600x900/?nature,water') no-repeat center center/cover;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+      padding: 100px 20px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: bold;
+    }
+    .hero p {
+      font-size: 1.2rem;
+    }
+    .card:hover {
+      transform: scale(1.05);
+      transition: transform 0.3s ease;
+    }
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+    }
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+    footer {
+      background-color: #007bff;
+      color: white;
+      text-align: center;
+      padding: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Hero Section -->
+  <section class="hero">
+    <h1>🌾 Sistema de Monitoramento Hídrico e Climatológico</h1>
+    <p>Aplicativo Web para Gestão Hídrica no Semiárido Pernambucano</p>
+    <a href="#funcionalidades" class="btn btn-primary btn-lg mt-3">Saiba Mais</a>
+    <a href="/acesso" class="btn btn-outline-light btn-lg mt-3">Acessar Sistema</a>
+  </section>
+
+  <!-- Funcionalidades -->
+  <section id="funcionalidades" class="container py-5">
+    <h2 class="text-center mb-4">🚀 Funcionalidades</h2>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-body text-center">
+            <h5 class="card-title">📍 Localização Automática</h5>
+            <p class="card-text">Detecte sua localização via GPS para dados precisos.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-body text-center">
+            <h5 class="card-title">🛰️ Dados de Satélite</h5>
+            <p class="card-text">Acesse informações de evapotranspiração e NDVI.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-body text-center">
+            <h5 class="card-title">💧 Recomendação de Irrigação</h5>
+            <p class="card-text">Receba orientações personalizadas para sua cultura.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tecnologias -->
+  <section class="bg-light py-5">
+    <div class="container">
+      <h2 class="text-center mb-4">🛠️ Tecnologias Utilizadas</h2>
+      <div class="row text-center">
+        <div class="col-md-3">
+          <h5>Frontend</h5>
+          <p>HTML5, CSS3, Bootstrap 5</p>
+        </div>
+        <div class="col-md-3">
+          <h5>Backend</h5>
+          <p>Python + Flask</p>
+        </div>
+        <div class="col-md-3">
+          <h5>APIs</h5>
+          <p>AppEEARS, Meteorologia</p>
+        </div>
+        <div class="col-md-3">
+          <h5>Visualização</h5>
+          <p>Matplotlib, Seaborn</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2025 Sistema de Monitoramento Hídrico e Climatológico. Todos os direitos reservados.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

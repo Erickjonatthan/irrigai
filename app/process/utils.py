@@ -91,7 +91,8 @@ def excluir_tasks_appeears(api, head, log=print):
         log(f"Erro ao excluir tasks no AppEEARS: {e}")
 
 
-def obter_token_autenticacao(api, _user, _password, log=print):
+# Função para obter o token de autenticação
+def obter_token_autenticacao(api, _user, _password):
     """
     Obtém o token de autenticação da API usando as credenciais fornecidas.
     """
@@ -101,5 +102,5 @@ def obter_token_autenticacao(api, _user, _password, log=print):
         head = {'Authorization': f'Bearer {token}'}
         return head
     except Exception as e:
-        log(f"Erro ao obter o token de autenticação: {e}")
+        print(f"Erro ao obter o token de autenticação: {e}")
         raise
