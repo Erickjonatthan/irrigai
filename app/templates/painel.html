@@ -95,7 +95,7 @@
     <script>
       document.getElementById("apagar-dados").addEventListener("click", function () {
         if (confirm("Tem certeza de que deseja apagar todos os seus dados?")) {
-          fetch("{{ url_for('main.apagar_conta') }}", {
+          fetch("{{ url_for('user_routes.apagar_conta') }}", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -119,7 +119,7 @@
 
       document.getElementById("logout").addEventListener("click", function () {
         if (confirm("Tem certeza de que deseja sair?")) {
-          fetch("{{ url_for('main.logout') }}", {
+          fetch("{{ url_for('auth.logout') }}", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
