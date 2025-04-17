@@ -2,6 +2,8 @@ import json
 import os
 import requests
 
+USER_DB_PATH = "app/static/user_db.json"
+
 def get_location_name(latitude, longitude, log=print):
     """
     Obtém o nome da localização a partir das coordenadas geográficas usando a API Nominatim.
@@ -35,40 +37,38 @@ def get_location_name(latitude, longitude, log=print):
     except Exception as e:
         return f"Erro ao processar a resposta da API Nominatim: {e}"
     
-def gerenciar_cache_parametros(inDir, parametros_atual, api, head, log=print):
+def excluir_dados_usuario(user_id, api, head, base_dir="app/static/cache_data", log=print):
     """
-    Gerencia o cache de parâmetros, verificando se há alterações e limpando o cache se necessário.
-    Também apaga as tasks realizadas no AppEEARS se os parâmetros forem diferentes.
+    Exclui todos os dados associados a um determinado user_id, incluindo a pasta de cache e tasks no AppEEARS.
+
+    Parâmetros:
+        user_id (str): O ID do usuário cujos dados devem ser excluídos.
+        api (str): URL base da API do AppEEARS.
+        head (dict): Cabeçalho de autenticação para a API.
+        base_dir (str): O diretório base onde os dados do usuário estão armazenados.
+        log (function): Função para registrar logs (padrão: print).
     """
-    # Caminho para o arquivo de cache de parâmetros
-    parametros_cache_path = os.path.join(inDir, "parametros_cache.json")
+    # Excluir tasks no AppEEARS
+    log(f"Excluindo tasks do usuário {user_id} no AppEEARS...")
+    excluir_tasks_appeears(api, head, log)
 
-    # Verifica se o cache existe
-    if os.path.exists(parametros_cache_path):
-        with open(parametros_cache_path, "r") as f:
-            parametros_salvos = json.load(f)
+    # Caminho para a pasta do usuário
+    user_dir = os.path.join(base_dir, user_id)
 
-        # Comparar os parâmetros atuais com os salvos
-        if parametros_atual != parametros_salvos:
-            log("Parâmetros diferentes detectados. Limpando o cache e excluindo tasks no AppEEARS...")
-
-            # Apagar todo o conteúdo da pasta inDir
-            for root, dirs, files in os.walk(inDir, topdown=False):
-                for file in files:
-                    os.remove(os.path.join(root, file))
-                for dir in dirs:
-                    os.rmdir(os.path.join(root, dir))
-
-            # Excluir tasks no AppEEARS
-            excluir_tasks_appeears(api, head, log)
+    # Verifica se a pasta do usuário existe
+    if os.path.exists(user_dir):
+        log(f"Excluindo dados do usuário: {user_id}")
+        # Remove todos os arquivos e subdiretórios dentro da pasta do usuário
+        for root, dirs, files in os.walk(user_dir, topdown=False):
+            for file in files:
+                os.remove(os.path.join(root, file))
+            for dir in dirs:
+                os.rmdir(os.path.join(root, dir))
+        # Remove a pasta do usuário
+        os.rmdir(user_dir)
+        log(f"Dados do usuário {user_id} excluídos com sucesso.")
     else:
-        log("Nenhum cache encontrado. Continuando com a execução...")
-
-    # Salvar os parâmetros atuais no cache
-    with open(parametros_cache_path, "w") as f:
-        json.dump(parametros_atual, f)
-
-
+        log(f"Nenhum dado encontrado para o usuário: {user_id}")
 def excluir_tasks_appeears(api, head, log=print):
     """
     Exclui apenas as tasks realizadas no AppEEARS cujo nome começa com 'BALANCO_HIDRICO_'.
@@ -114,3 +114,15 @@ def verificar_token_valido(api,head):
         return response.status_code == 200  # Retorna True se o token for válido
     except Exception:
         return False
+
+def carregar_usuarios():
+    """Carrega o banco de dados de usuários do arquivo JSON."""
+    if os.path.exists(USER_DB_PATH):
+        with open(USER_DB_PATH, "r") as file:
+            return json.load(file)
+    return {}
+
+def salvar_usuarios(usuarios):
+    """Salva o banco de dados de usuários no arquivo JSON."""
+    with open(USER_DB_PATH, "w") as file:
+        json.dump(usuarios, file, indent=4)

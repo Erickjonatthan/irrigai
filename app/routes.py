@@ -3,19 +3,23 @@ from flask import Blueprint, render_template, request, jsonify, redirect, url_fo
 import threading
 import shutil
 import os
+import hashlib
 from app.models import processar_dados
 from app.globals import stop_event
 from app.globals import api_url
-from app.process.utils import obter_token_autenticacao, verificar_token_valido
+from app.process.utils import obter_token_autenticacao, verificar_token_valido, carregar_usuarios, salvar_usuarios, excluir_dados_usuario
 from app.dto.dtos import ResultadosDTO
 from app.dto.dtos import ProcessarDadosDTO
 
+
 main = Blueprint("main", __name__)
+
+USER_DB_PATH = "app/static/user_db.json"
 
 # Variável global para armazenar os resultados
 resultados_globais = {}
 
-def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id, head):
+def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id, head, user_id):
     try:
         stop_event.clear()
         resultados_globais[thread_id] = {"logs": [], "resultados": None}
@@ -33,6 +37,7 @@ def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id, head):
             cultura=cultura,
             estagio=estagio,
             head=head,
+            user_id=user_id,
         )
 
         # Passa o DTO para a função processar_dados
@@ -93,31 +98,45 @@ def autenticar():
         return jsonify({"error": "Usuário e senha são obrigatórios"}), 400
 
     try:
-       
+        # Gera o token de autenticação
         head = obter_token_autenticacao(api_url, usuario, senha)
 
-        # Armazena o cabeçalho na sessão para uso posterior
+        # Carrega o banco de dados de usuários
+        usuarios = carregar_usuarios()
+
+        # Verifica se o usuário já possui um user_id
+        if usuario in usuarios:
+            user_id = usuarios[usuario]
+        else:
+            # Gera um ID único para o usuário usando um hash do nome de usuário
+            user_id = hashlib.md5(usuario.encode()).hexdigest()
+            usuarios[usuario] = user_id
+            salvar_usuarios(usuarios)  # Salva o novo usuário no banco de dados
+
+        # Armazena o cabeçalho e o user_id na sessão
         session["head"] = head
+        session["usuario"] = usuario
+        session["user_id"] = user_id
 
         return jsonify({"message": "Autenticação bem-sucedida", "redirect": url_for("main.form")})
     except Exception as e:
         return jsonify({"error": str(e)}), 401
 
-# Rota para o formulário (protegida)
 @main.route("/form", methods=["GET"])
 def form():
     if "head" not in session:
         return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso se não estiver autenticado
 
     head = session["head"]
+    usuario = session["usuario"]
 
     # Verifica se o token ainda é válido
     if not verificar_token_valido(api_url, head):
         session.pop("head", None)  # Remove o token inválido da sessão
         return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso
 
-    return render_template("form.html")
-
+    # Passa o nome do usuário para o template
+    return render_template("form.html", usuario=usuario)
 
 @main.route("/iniciar-carregamento", methods=["POST"])
 def iniciar_carregamento():
@@ -125,6 +144,7 @@ def iniciar_carregamento():
         return jsonify({"error": "Usuário não autenticado"}), 401
 
     head = session["head"]
+    user_id = session["user_id"]
 
     # Verifica se o token ainda é válido
     if not verificar_token_valido(api_url, head):
@@ -147,7 +167,7 @@ def iniciar_carregamento():
         # Inicia a thread com o DTO
         thread = threading.Thread(
             target=baixar_dados_thread,
-            args=(latitude, longitude, cultura, estagio, thread_id, head),
+            args=(latitude, longitude, cultura, estagio, thread_id, head, user_id),
         )
         thread.start()
 
@@ -160,26 +180,33 @@ def iniciar_carregamento():
 @main.route("/resultados", methods=["GET"])
 def resultados():
     if "head" not in session:
-        return jsonify({"error": "Usuário não autenticado"}), 401
+        return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso se não estiver autenticado
 
     head = session["head"]
 
     # Verifica se o token ainda é válido
     if not verificar_token_valido(api_url, head):
         session.pop("head", None)  # Remove o token inválido da sessão
-        return jsonify({"error": "Token expirado. Faça login novamente.", "redirect": url_for("main.acesso")}), 401
+        return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso
 
     thread_id = request.args.get("thread_id")
     resultados = resultados_globais.get(thread_id, {}).get("resultados")
 
     if not resultados:
-        return jsonify({"error": "Nenhum resultado encontrado. Certifique-se de que o processamento foi concluído."}), 400
+        return render_template(
+            "error.html", 
+            mensagem="Nenhum resultado encontrado. Certifique-se de que o processamento foi concluído."
+        )
 
     # Verifica se os resultados são do tipo ResultadosDTO
     if isinstance(resultados, ResultadosDTO):
-        return jsonify(resultados.to_dict())
+        # Passa o objeto resultados diretamente para o template
+        return render_template("painel.html", resultados=resultados)
     else:
-        return jsonify({"error": "Formato de resultados inválido."}), 500
+        return render_template(
+            "error.html", 
+            mensagem="Formato de resultados inválido."
+        )
 
 
 @main.route("/parar-carregamento", methods=["POST"])
@@ -212,3 +239,32 @@ def parar_carregamento():
                     shutil.rmtree(item_path)
 
     return jsonify({"status": "Carregamento interrompido e cache limpo, exceto o arquivo de parâmetros."})
+
+
+@main.route("/apagar-conta", methods=["POST"])
+def apagar_conta():
+    if "usuario" not in session:
+        return jsonify({"error": "Usuário não autenticado"}), 401
+
+    usuario = session["usuario"]
+    user_id = session.get("user_id")
+    head = session.get("head")
+
+    # Carrega o banco de dados de usuários
+    usuarios = carregar_usuarios()
+
+    # Remove o usuário do banco de dados
+    if usuario in usuarios:
+        del usuarios[usuario]
+        salvar_usuarios(usuarios)
+
+    # Exclui os dados do usuário (pasta de cache e tasks no AppEEARS)
+    if user_id and head:
+        excluir_dados_usuario(user_id, api_url, head)
+
+    # Limpa a sessão
+    session.pop("head", None)
+    session.pop("usuario", None)
+    session.pop("user_id", None)
+
+    return jsonify({"message": "Conta apagada com sucesso."})

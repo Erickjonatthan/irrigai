@@ -1,32 +1,45 @@
 import os
 
-def criar_diretorios(inDir, latitude, longitude, area):
-    if not os.path.exists(inDir):
-        os.makedirs(inDir)
-    _localdataName = f"{inDir}/{latitude}_{longitude}_{area}"
-    if not os.path.exists(_localdataName):
-        os.makedirs(_localdataName)
-    _graficos = os.path.join(_localdataName, "resultados")
-    if not os.path.exists(_graficos):
-        os.makedirs(_graficos)
-    return _localdataName, _graficos
-
-def obter_caminhos_graficos(latitude, longitude, _res, nome_local, _ano_inicial, _ano_final):
+def criar_diretorios(inDir, user_id, latitude, longitude, area):
     """
-    Gera os caminhos para os gráficos e mapas gerados.
+    Cria os diretórios necessários para armazenar os dados do usuário.
     """
-    base_path = f"app/static/cache_data/{latitude}_{longitude}_{_res}/resultados"
-    if not os.path.exists(base_path):
-        os.makedirs(base_path)
+    base_dir = os.path.join(inDir, user_id)
+    if not os.path.exists(base_dir):
+        os.makedirs(base_dir)
 
-    grafico_precipitacao_path = f"cache_data/{latitude}_{longitude}_{_res}/resultados/grafico_precipitacao_{nome_local.replace(' ', '_')}_{_ano_inicial}_{_ano_final}.png"
-    grafico_rai_path = f"cache_data/{latitude}_{longitude}_{_res}/resultados/RAI.png"
-    grafico_aridez_path = f"cache_data/{latitude}_{longitude}_{_res}/resultados/IA.png"
-    mapaIA_path = f"cache_data/{latitude}_{longitude}_{_res}/resultados/mapaIA{_ano_inicial}-{_ano_final}.png"
+    local_data_name = os.path.join(base_dir, f"{latitude}_{longitude}_{area}")
+    if not os.path.exists(local_data_name):
+        os.makedirs(local_data_name)
 
-    print(f"Gráfico de precipitação salvo em: {grafico_precipitacao_path}")
-    print(f"Gráfico de RAI salvo em: {grafico_rai_path}")
-    print(f"Gráfico de aridez salvo em: {grafico_aridez_path}")
-    print(f"Mapa de IA salvo em: {mapaIA_path}")
+    graficos_dir = os.path.join(local_data_name, "resultados")
+    if not os.path.exists(graficos_dir):
+        os.makedirs(graficos_dir)
 
-    return grafico_precipitacao_path, grafico_rai_path, grafico_aridez_path, mapaIA_path
+    return local_data_name, graficos_dir
+
+def obter_caminhos_graficos(latitude, longitude, resolucao, nome_local, ano_inicial, ano_final, user_id):
+    """
+    Gera os caminhos para os gráficos e mapas gerados, organizados por usuário.
+    """
+    # Define o diretório base para os resultados
+    base_path = os.path.join("app", "static", "cache_data", user_id, f"{latitude}_{longitude}_{resolucao}", "resultados")
+    os.makedirs(base_path, exist_ok=True)  # Cria o diretório, se não existir
+
+    # Define os nomes dos arquivos de saída
+    arquivos = {
+        "grafico_precipitacao": f"grafico_precipitacao_{nome_local.replace(' ', '_')}_{ano_inicial}_{ano_final}.png",
+        "grafico_rai": "RAI.png",
+        "grafico_aridez": "IA.png",
+        "mapa_IA": f"mapaIA{ano_inicial}-{ano_final}.png",
+    }
+
+    # Gera os caminhos completos para os arquivos
+    caminhos = {key: os.path.join("cache_data", user_id, f"{latitude}_{longitude}_{resolucao}", "resultados", nome)
+                for key, nome in arquivos.items()}
+
+    # Logs para depuração
+    for descricao, caminho in caminhos.items():
+        print(f"{descricao.replace('_', ' ').capitalize()} salvo em: {caminho}")
+
+    return caminhos["grafico_precipitacao"], caminhos["grafico_rai"], caminhos["grafico_aridez"], caminhos["mapa_IA"]

@@ -4,7 +4,7 @@ from app.process.data_processing import processar_balanco_hidrico, processar_dad
 from app.process.file_operations import criar_diretorios, obter_caminhos_graficos
 from app.process.graphics import calcular_e_gerar_grafico_rai, calcular_indices_e_gerar_graficos, gerar_grafico_indice_aridez_unep
 from app.process.map_operations import criar_mapa
-from app.process.utils import gerenciar_cache_parametros, get_location_name
+from app.process.utils import get_location_name
 import climateservaccess as ca
 from app.globals import api_url as api
 from app.dto.dtos import ResultadosDTO
@@ -21,20 +21,7 @@ def processar_dados(dto: ProcessarDadosDTO, log=print):
     if not os.path.exists(inDir):
         os.makedirs(inDir)
 
-    parametros_atual = {
-        "latitude": dto.latitude,
-        "longitude": dto.longitude,
-        "cultura": dto.cultura,
-        "estagio": dto.estagio,
-        "ano_inicial": dto.ano_inicial,
-        "ano_final": dto.ano_final,
-        "res": _res
-    }
-
-    # Gerencia o cache dos parâmetros
-    gerenciar_cache_parametros(inDir, parametros_atual, api, dto.head, log=log)
-
-    _localdataName, _graficos = criar_diretorios(inDir, dto.latitude, dto.longitude, _res)
+    _localdataName, _graficos = criar_diretorios(inDir, dto.user_id, dto.latitude, dto.longitude, _res)
 
     _NomeLocal = get_location_name(dto.latitude, dto.longitude, log=log)
     _quadrado = ca.getBox(dto.latitude, dto.longitude, _res)
@@ -68,7 +55,7 @@ def processar_dados(dto: ProcessarDadosDTO, log=print):
 
     log("Obtendo caminhos dos gráficos finais...")
     grafico_precipitacao_path, grafico_rai_path, grafico_aridez_path, mapaIA_path = obter_caminhos_graficos(
-        dto.latitude, dto.longitude, _res, _NomeLocal, dto.ano_inicial, dto.ano_final
+        dto.latitude, dto.longitude, _res, _NomeLocal, dto.ano_inicial, dto.ano_final, dto.user_id
     )
 
     dados_ET = _balanco["ET"]
@@ -77,7 +64,7 @@ def processar_dados(dto: ProcessarDadosDTO, log=print):
     anos = _balanco["Ano"]
 
     log("Gerando recomendações de irrigação...")
-    recomendacoes = recomendar_irrigacao(dto.cultura, dto.stagio, dados_ET, dados_PET, dados_precipitacao, anos)
+    recomendacoes = recomendar_irrigacao(dto.cultura, dto.estagio, dados_ET, dados_PET, dados_precipitacao, anos)
 
     log("Processamento completo! 🎉")
 
