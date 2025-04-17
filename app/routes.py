@@ -4,6 +4,7 @@ import threading
 import shutil
 import os
 import hashlib
+import json
 from app.models import processar_dados
 from app.globals import stop_event
 from app.globals import api_url
@@ -48,8 +49,14 @@ def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id, head, 
 
         # Armazena os resultados apenas se o processo não foi interrompido
         resultados_globais[thread_id]["resultados"] = resultados
+
+        # Salva os resultados em disco
+        user_folder = os.path.join("app/static/cache_data", user_id)
+        os.makedirs(user_folder, exist_ok=True)
+        resultados_path = os.path.join(user_folder, f"{user_id}_resultados.json")
+        with open(resultados_path, "w") as f:
+            json.dump(resultados.__dict__, f, default=str)  # Converte o DTO para JSON
     except Exception as e:
-        # Verifica se o erro não foi causado pela interrupção do usuário
         if not stop_event.is_set():
             resultados_globais[thread_id]["logs"].append(f"Erro: {str(e)}")
             print(f"Erro ao baixar dados: {e}")
@@ -127,14 +134,27 @@ def form():
 
     head = session["head"]
     usuario = session["usuario"]
+    user_id = session.get("user_id")
 
     # Verifica se o token ainda é válido
     if not verificar_token_valido(api_url, head):
         session.pop("head", None)  # Remove o token inválido da sessão
         return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso
 
+
+    # Caminho para a pasta do usuário
+    user_folder = os.path.join("app/static/cache_data", user_id)
+
+    # Caminho correto para o arquivo de resultados
+    resultados_path = os.path.join(user_folder, f"{user_id}_resultados.json")
+
+    # Verifica se o arquivo de resultados existe
+    if os.path.exists(resultados_path):
+        return redirect(url_for("main.painel"))  # Redireciona para o painel
+
     # Passa o nome do usuário para o template
     return render_template("form.html", usuario=usuario)
+
 
 @main.route("/iniciar-carregamento", methods=["POST"])
 def iniciar_carregamento():
@@ -160,6 +180,7 @@ def iniciar_carregamento():
         if not all([latitude, longitude, cultura, estagio]):
             return jsonify({"error": "Todos os campos (latitude, longitude, cultura, estagio) são obrigatórios"}), 400
 
+        # Gera o thread_id
         thread_id = f"{latitude}_{longitude}_{cultura}_{estagio}"
 
         # Inicia a thread com o DTO
@@ -176,35 +197,40 @@ def iniciar_carregamento():
 
 
 @main.route("/painel", methods=["GET"])
-def resultados():
+def painel():
     if "head" not in session:
         return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso se não estiver autenticado
 
     head = session["head"]
+    user_id = session.get("user_id")
 
     # Verifica se o token ainda é válido
     if not verificar_token_valido(api_url, head):
         session.pop("head", None)  # Remove o token inválido da sessão
         return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso
 
-    thread_id = request.args.get("thread_id")
-    resultados = resultados_globais.get(thread_id, {}).get("resultados")
 
-    if not resultados:
+    # Caminho para os resultados salvos
+    user_folder = os.path.join("app/static/cache_data", user_id)
+    resultados_path = os.path.join(user_folder, f"{user_id}_resultados.json")
+
+    # Tenta carregar os resultados do disco
+    if os.path.exists(resultados_path):
+        try:
+            with open(resultados_path, "r") as f:
+                resultados_data = json.load(f)
+                resultados = ResultadosDTO(**resultados_data)  # Reconstrói o DTO a partir do JSON
+        except Exception as e:
+            print(f"Erro ao carregar resultados do disco: {e}")
+            return render_template("error.html", mensagem="Erro ao carregar os resultados.")
+    else:
         return render_template(
             "error.html", 
             mensagem="Nenhum resultado encontrado. Certifique-se de que o processamento foi concluído."
         )
 
-    # Verifica se os resultados são do tipo ResultadosDTO
-    if isinstance(resultados, ResultadosDTO):
-        # Passa o objeto resultados diretamente para o template
-        return render_template("painel.html", resultados=resultados)
-    else:
-        return render_template(
-            "error.html", 
-            mensagem="Formato de resultados inválido."
-        )
+    # Passa os resultados para o template
+    return render_template("painel.html", resultados=resultados)
 
 
 @main.route("/parar-carregamento", methods=["POST"])
@@ -266,3 +292,10 @@ def apagar_conta():
     session.pop("user_id", None)
 
     return jsonify({"message": "Conta apagada com sucesso."})
+
+@main.route("/logout", methods=["POST"])
+def logout():
+    session.pop("head", None)  # Remove o token da sessão
+    session.pop("usuario", None)  # Remove o usuário da sessão
+    session.pop("user_id", None)  # Remove o user_id da sessão
+    return jsonify({"message": "Logout realizado com sucesso.", "redirect": url_for("main.acesso")})

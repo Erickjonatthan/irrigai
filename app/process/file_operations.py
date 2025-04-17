@@ -34,8 +34,8 @@ def obter_caminhos_graficos(latitude, longitude, resolucao, nome_local, ano_inic
         "mapa_IA": f"mapaIA{ano_inicial}-{ano_final}.png",
     }
 
-    # Gera os caminhos completos para os arquivos
-    caminhos = {key: os.path.join("cache_data", user_id, f"{latitude}_{longitude}_{resolucao}", "resultados", nome)
+    # Gera os caminhos completos para os arquivos e normaliza para o formato de URL
+    caminhos = {key: os.path.join("cache_data", user_id, f"{latitude}_{longitude}_{resolucao}", "resultados", nome).replace("\\", "/")
                 for key, nome in arquivos.items()}
 
     # Logs para depuração
