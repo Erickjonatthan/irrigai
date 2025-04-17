@@ -177,7 +177,7 @@ def iniciar_carregamento():
         return jsonify({"error": str(e)}), 400
 
 
-@main.route("/resultados", methods=["GET"])
+@main.route("/painel", methods=["GET"])
 def resultados():
     if "head" not in session:
         return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso se não estiver autenticado

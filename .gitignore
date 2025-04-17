@@ -7,3 +7,6 @@ __pycache__/
 # Ignore content inside cache_data but not the folder itself
 /app/static/cache_data/*
 !/app/static/cache_data/.gitkeep
+
+# Ignore user_db.json file
+/app/static/user_db.json

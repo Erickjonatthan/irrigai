@@ -187,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (completo) {
             progressBar.style.width = "100%"; // Completa a barra
-            window.location.href = `/resultados?thread_id=${threadId}`;
+            window.location.href = `/painel?thread_id=${threadId}`;
           } else {
             setTimeout(() => {
               loadingModal.hide();
