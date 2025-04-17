@@ -8,5 +8,5 @@ __pycache__/
 /app/static/cache_data/*
 !/app/static/cache_data/.gitkeep
 
-# Ignore user_db.json file
-/app/static/user_db.json
+# Ignore usuarios_db.json file
+/app/static/usuarios_db.json

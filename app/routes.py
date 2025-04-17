@@ -14,8 +14,6 @@ from app.dto.dtos import ProcessarDadosDTO
 
 main = Blueprint("main", __name__)
 
-USER_DB_PATH = "app/static/user_db.json"
-
 # Variável global para armazenar os resultados
 resultados_globais = {}
 

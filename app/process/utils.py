@@ -2,7 +2,7 @@ import json
 import os
 import requests
 
-USER_DB_PATH = "app/static/user_db.json"
+USER_DB_PATH = "app/static/usuarios_db.json"
 
 def get_location_name(latitude, longitude, log=print):
     """
