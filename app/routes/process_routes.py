@@ -47,7 +47,7 @@ def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id, head, 
         resultados_globais[thread_id]["resultados"] = resultados
 
         # Salva os resultados em disco
-        user_folder = os.path.join("app/static/cache_data", user_id)
+        user_folder = os.path.join("app/static/data", user_id)
         os.makedirs(user_folder, exist_ok=True)
         resultados_path = os.path.join(user_folder, f"{user_id}_resultados.json")
         with open(resultados_path, "w") as f:
@@ -112,11 +112,11 @@ def parar_carregamento():
     stop_event.set()  # Sinaliza para parar o processo
 
     # Caminho para a pasta de cache
-    cache_dir = "app/static/cache_data"
+    cache_dir = "app/static/data"
     parametros_cache_path = os.path.join(cache_dir, "parametros_cache.json")
 
     if os.path.exists(cache_dir):
-        # Itera sobre os arquivos e pastas dentro de cache_data
+        # Itera sobre os arquivos e pastas dentro de data
         for item in os.listdir(cache_dir):
             item_path = os.path.join(cache_dir, item)
             # Remove tudo, exceto o arquivo parametros_cache.json

@@ -37,7 +37,7 @@ def get_location_name(latitude, longitude, log=print):
     except Exception as e:
         return f"Erro ao processar a resposta da API Nominatim: {e}"
     
-def excluir_dados_usuario(user_id, api, head, base_dir="app/static/cache_data", log=print):
+def excluir_dados_usuario(user_id, api, head, base_dir="app/static/data", log=print):
     """
     Exclui todos os dados associados a um determinado user_id, incluindo a pasta de cache e tasks no AppEEARS.
 

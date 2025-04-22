@@ -16,7 +16,7 @@ def processar_dados(dto: ProcessarDadosDTO, log=print):
     Processa os dados necessários para o sistema, utilizando o cabeçalho de autenticação (head) fornecido.
     """
     _res = 10
-    inDir = 'app/static/cache_data'
+    inDir = 'app/static/data'
 
     if not os.path.exists(inDir):
         os.makedirs(inDir)

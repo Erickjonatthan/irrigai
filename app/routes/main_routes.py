@@ -36,7 +36,7 @@ def form():
 
 
     # Caminho para a pasta do usuário
-    user_folder = os.path.join("app/static/cache_data", user_id)
+    user_folder = os.path.join("app/static/data", user_id)
 
     # Caminho correto para o arquivo de resultados
     resultados_path = os.path.join(user_folder, f"{user_id}_resultados.json")
@@ -64,7 +64,7 @@ def painel():
 
 
     # Caminho para os resultados salvos
-    user_folder = os.path.join("app/static/cache_data", user_id)
+    user_folder = os.path.join("app/static/data", user_id)
     resultados_path = os.path.join(user_folder, f"{user_id}_resultados.json")
 
     # Tenta carregar os resultados do disco

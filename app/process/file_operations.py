@@ -23,7 +23,7 @@ def obter_caminhos_graficos(latitude, longitude, resolucao, nome_local, ano_inic
     Gera os caminhos para os gráficos e mapas gerados, organizados por usuário.
     """
     # Define o diretório base para os resultados
-    base_path = os.path.join("app", "static", "cache_data", user_id, f"{latitude}_{longitude}_{resolucao}", "resultados")
+    base_path = os.path.join("app", "static", "data", user_id, f"{latitude}_{longitude}_{resolucao}", "resultados")
     os.makedirs(base_path, exist_ok=True)  # Cria o diretório, se não existir
 
     # Define os nomes dos arquivos de saída
@@ -35,7 +35,7 @@ def obter_caminhos_graficos(latitude, longitude, resolucao, nome_local, ano_inic
     }
 
     # Gera os caminhos completos para os arquivos e normaliza para o formato de URL
-    caminhos = {key: os.path.join("cache_data", user_id, f"{latitude}_{longitude}_{resolucao}", "resultados", nome).replace("\\", "/")
+    caminhos = {key: os.path.join("data", user_id, f"{latitude}_{longitude}_{resolucao}", "resultados", nome).replace("\\", "/")
                 for key, nome in arquivos.items()}
 
     # Logs para depuração
