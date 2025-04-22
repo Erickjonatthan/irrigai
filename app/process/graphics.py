@@ -157,6 +157,8 @@ def calcular_indices_e_gerar_graficos(_balanco, _precipitacao_df, _ano_inicial, 
     plt.legend()
     plt.savefig(os.path.join(_graficos, "precipitacao_e_evaporacao.png"), format="png")
 
+    return os.path.join(_graficos, "precipitacao_e_evaporacao.png")
+
 def gerar_grafico_indice_aridez_unep(_balanco, _ano_inicial, _ano_final, _graficos):
     """
     Gera o gráfico do índice de aridez UNEP e salva como imagem.

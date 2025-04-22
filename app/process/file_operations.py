@@ -32,6 +32,8 @@ def obter_caminhos_graficos(latitude, longitude, resolucao, nome_local, ano_inic
         "grafico_rai": "RAI.png",
         "grafico_aridez": "IA.png",
         "mapa_IA": f"mapaIA{ano_inicial}-{ano_final}.png",
+        "grafico_balanco_hidrico": f"balanco_hidrico_{ano_inicial}_{ano_final}_{nome_local.replace(' ', '_')}.png",
+        "grafico_precipitacao_vs_evaporacao": "precipitacao_e_evaporacao.png",
     }
 
     # Gera os caminhos completos para os arquivos e normaliza para o formato de URL
@@ -42,4 +44,4 @@ def obter_caminhos_graficos(latitude, longitude, resolucao, nome_local, ano_inic
     for descricao, caminho in caminhos.items():
         print(f"{descricao.replace('_', ' ').capitalize()} salvo em: {caminho}")
 
-    return caminhos["grafico_precipitacao"], caminhos["grafico_rai"], caminhos["grafico_aridez"], caminhos["mapa_IA"]
+    return caminhos["grafico_precipitacao"], caminhos["grafico_rai"], caminhos["grafico_aridez"], caminhos["mapa_IA"], caminhos["grafico_balanco_hidrico"], caminhos["grafico_precipitacao_vs_evaporacao"]

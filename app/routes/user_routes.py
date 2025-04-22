@@ -1,7 +1,5 @@
 from flask import Blueprint, jsonify, session
 from app.process.utils import excluir_dados_usuario, carregar_usuarios, salvar_usuarios
-import os
-import shutil
 from app.globals import api_url
 user_bp = Blueprint("user_routes", __name__)
 

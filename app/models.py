@@ -39,22 +39,22 @@ def processar_dados(dto: ProcessarDadosDTO, log=print):
     )
 
     log("Calculando índices de aridez...")
-    calcular_indices_e_gerar_graficos(_balanco, _precipitacao_df, dto.ano_inicial, dto.ano_final, _graficos)
+    grafico_precipitacao_vs_evaporacao_path = calcular_indices_e_gerar_graficos(_balanco, _precipitacao_df, dto.ano_inicial, dto.ano_final, _graficos)
 
     log("Gerando gráfico de índice de aridez (UNEP)...")
     gerar_grafico_indice_aridez_unep(_balanco, dto.ano_inicial, dto.ano_final, _graficos)
 
     log("Classificando índices de aridez...")
-    calcular_e_classificar_indices_aridez(_balanco, dto.ano_inicial, dto.ano_final)
+    indices_e_classificacoes = calcular_e_classificar_indices_aridez(_balanco, dto.ano_inicial, dto.ano_final)
 
-    log("Processando dados para mapa de aridez com IA...")
+    log("Processando dados para mapa de aridez com o indice de aridez...")
     mapaIA_path = processar_dados_aridez(dto.ano_inicial, dto.ano_final, _localdataName, _graficos, _NomeLocal)
 
     log("Calculando RAI e gerando gráfico...")
     calcular_e_gerar_grafico_rai(_balanco, _precipitacao_df, _graficos)
 
     log("Obtendo caminhos dos gráficos finais...")
-    grafico_precipitacao_path, grafico_rai_path, grafico_aridez_path, mapaIA_path = obter_caminhos_graficos(
+    grafico_precipitacao_path, grafico_rai_path, grafico_aridez_path, mapaIA_path,grafico_balanco_hidrico_path, grafico_precipitacao_vs_evaporacao_path = obter_caminhos_graficos(
         dto.latitude, dto.longitude, _res, _NomeLocal, dto.ano_inicial, dto.ano_final, dto.user_id
     )
 
@@ -76,8 +76,11 @@ def processar_dados(dto: ProcessarDadosDTO, log=print):
         latitude=dto.latitude,
         longitude=dto.longitude,
         grafico_precipitacao=grafico_precipitacao_path,
+        grafico_precipitacao_vs_evaporacao=grafico_precipitacao_vs_evaporacao_path,
+        grafico_balanco_hidrico=grafico_balanco_hidrico_path,
         grafico_rai=grafico_rai_path,
         grafico_aridez=grafico_aridez_path,
         mapa_IA=mapaIA_path,
+        indices_e_classificacoes=indices_e_classificacoes,
         recomendacoes=recomendacoes,
     )

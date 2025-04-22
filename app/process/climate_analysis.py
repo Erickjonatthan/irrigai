@@ -83,8 +83,10 @@ def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitac
 
 def calcular_e_classificar_indices_aridez(_balanco, _ano_inicial, _ano_final):
     """
-    Calcula os índices de aridez, realiza classificações e imprime os resultados.
+    Calcula os índices de aridez, realiza classificações e retorna uma lista com os resultados.
     """
+    resultados = []
+    
     # Cálculo de médias e classificações
     indice_aridez_medio = _balanco["Indice de Aridez UNEP"].mean()
     z = np.polyfit(_balanco["Ano"], _balanco["Indice de Aridez UNEP"], 1)
@@ -92,13 +94,26 @@ def calcular_e_classificar_indices_aridez(_balanco, _ano_inicial, _ano_final):
     indice_aridez_tendencia = p(_balanco["Ano"]).mean()
     indice_aridez_atual = _balanco.iloc[-1]["Indice de Aridez UNEP"]
 
-    print(f"Essa região está classificada atualmente como sendo uma região {indice_aridez_atual:.2f}, "
-          f"o que lhe classifica como uma região {categoria_climatica(indice_aridez_atual)}")
-    print(f"Entre os anos de {_ano_inicial} e {_ano_final}, a região teve um índice médio de {indice_aridez_tendencia:.2f}, "
-          f"o que lhe classifica como uma região {categoria_climatica(indice_aridez_tendencia)}")
-    print(f"A chance de desertificação da região está classificada como {risco_desertificacao(indice_aridez_tendencia)}")
+    resultados.append(
+        f"Essa região está classificada atualmente como sendo uma região {indice_aridez_atual:.2f}, "
+        f"o que lhe classifica como uma região {categoria_climatica(indice_aridez_atual)}"
+    )
+    
+    resultados.append(
+        f"Entre os anos de {_ano_inicial} e {_ano_final}, a região teve um índice médio de {indice_aridez_tendencia:.2f}, "
+        f"o que lhe classifica como uma região {categoria_climatica(indice_aridez_tendencia)}"
+    )
+    
+    resultados.append(
+        f"A chance de desertificação da região está classificada como {risco_desertificacao(indice_aridez_tendencia)}"
+    )
 
     # Comparação de índices de aridez
     _balanco["Aridez2"] = _balanco["ET"] / _balanco["PET"]
     indice_aridez2_medio = _balanco["Aridez2"].mean()
-    print(f"Comparando os 2 índices para verificar equivalência {indice_aridez_medio:.2f} ~= {indice_aridez2_medio:.2f}")
+    
+    resultados.append(
+        f"Comparando os 2 índices para verificar equivalência {indice_aridez_medio:.2f} ~= {indice_aridez2_medio:.2f}"
+    )
+
+    return resultados
