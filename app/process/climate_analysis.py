@@ -27,7 +27,7 @@ def risco_desertificacao(ai):
 
 def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitacao, anos):
     """
-    Fornece recomendações de irrigação em linguagem acessível com base nos dados anuais.
+    Fornece uma recomendação geral de irrigação com base nos dados anuais.
     """
 
     cultura = cultura.lower()
@@ -53,32 +53,35 @@ def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitac
         "Precipitacao": dados_precipitacao
     })
 
-    mensagens = []
-
+    deficits = []
     for _, linha in df.iterrows():
-        ano = linha["Ano"]
         pet = linha["PET"]
-        et = linha["ET"]
         prec = linha["Precipitacao"]
         etc = pet * kc
         deficit = etc - prec
+        deficits.append(deficit)
 
-        if deficit > 0:
-            msg = (
-                f"📅 Ano {ano}: Sua PET foi de {pet:.1f} mm. "
-                f"Como sua cultura é {cultura} no estágio {estagio} (Kc = {kc}), "
-                f"a planta precisa de aproximadamente {etc:.1f} mm. "
-                f"A precipitação foi de {prec:.1f} mm, resultando em um déficit de {deficit:.1f} mm. "
-                f"💧 Recomendado realizar irrigação neste ano."
-            )
-        else:
-            msg = (
-                f"📅 Ano {ano}: PET de {pet:.1f} mm e precipitação de {prec:.1f} mm. "
-                f"Não há déficit hídrico significativo — irrigação provavelmente não necessária."
-            )
-        mensagens.append(msg)
+    deficit_medio = np.mean(deficits)
+    anos_irrigacao = sum(1 for d in deficits if d > 0)
+    total_anos = len(deficits)
+    ano_inicial = df["Ano"].iloc[0]
+    ano_final = df["Ano"].iloc[-1]
 
-    return mensagens
+    if anos_irrigacao > total_anos / 2:
+        recomendacao = (
+            f"Entre os anos de {ano_inicial} e {ano_final}, a cultura {cultura} no estágio {estagio} (Kc = {kc}) apresentou, em média, "
+            f"um déficit hídrico de {deficit_medio:.1f} mm/ano. "
+            f"Em {anos_irrigacao} de {total_anos} anos analisados, foi recomendado realizar irrigação. "
+            f"💧 Recomenda-se atenção à irrigação nesse período."
+        )
+    else:
+        recomendacao = (
+            f"Entre os anos de {ano_inicial} e {ano_final}, a cultura {cultura} no estágio {estagio} (Kc = {kc}) apresentou, em média, "
+            f"um déficit hídrico de {deficit_medio:.1f} mm/ano. "
+            f"Na maioria dos anos, a irrigação provavelmente não foi necessária."
+        )
+
+    return [recomendacao]
 
 
 def calcular_e_classificar_indices_aridez(_balanco, _ano_inicial, _ano_final):

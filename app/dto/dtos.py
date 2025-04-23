@@ -35,7 +35,7 @@ class ResultadosDTO:
         }
     
 class ProcessarDadosDTO:
-    def __init__(self, latitude, longitude, cultura, estagio, head, user_id, ano_inicial=2020, ano_final=2022):
+    def __init__(self, latitude, longitude, cultura, estagio, head, user_id, ano_inicial=2004, ano_final=2024):
         self.latitude = float(latitude)
         self.longitude = float(longitude)
         self.cultura = cultura

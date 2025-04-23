@@ -23,7 +23,7 @@ Desenvolvido como parte do projeto de Iniciação Científica no Instituto IPÊ 
 - **Frontend**: HTML5, CSS3, Bootstrap 5, JavaScript (Geolocalização + Maps)
 - **Backend**: Python + Flask
 - **APIs**: AppEEARS (NASA), meteorologia (em breve)
-- **Visualização de dados**: Matplotlib, Seaborn, Pandas
+- **Visualização de dados**: Matplotlib, Seaborn, Pandas, Folium
 
 ---
 

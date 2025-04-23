@@ -10,3 +10,7 @@ folium
 requests
 rasterio
 scikit-learn
+rioxarray
+shapely
+hashlib
+threading
