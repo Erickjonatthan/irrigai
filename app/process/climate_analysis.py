@@ -120,3 +120,28 @@ def calcular_e_classificar_indices_aridez(_balanco, _ano_inicial, _ano_final):
     )
 
     return resultados
+
+def processar_dados_aridez(_ano_inicial, _ano_final, _localdataName, _graficos, _NomeLocal):
+    """
+    Processa os dados de aridez para os anos fornecidos, calcula a média e gera o mapa de IA.
+    """
+    _dado = []
+    for i in range(_ano_inicial, _ano_final + 1):  # Inclui todos os anos no intervalo
+        try:
+            print(f"Processando o ano {i}...")
+            arid_data = mostraGraficoDoAno(i, _localdataName)
+            _dado.append(arid_data)
+        except FileNotFoundError as e:
+            print(f"Erro ao processar o ano {i}: {e}")
+    
+    # Calcula a média dos dados de aridez ao longo dos anos processados
+    if _dado:  # Verifica se há dados processados
+        _final = np.mean(_dado, axis=0)
+    
+        # Gera o mapa usando os dados médios
+        mapaIA_path = PlotGrafico(_final, f"{_ano_inicial}-{_ano_final}", _NomeLocal, _graficos)
+        print(f"Mapa de IA salvo em: {mapaIA_path}")
+        return mapaIA_path
+    else:
+        print("Nenhum dado foi processado. Verifique os arquivos de entrada.")
+        return None

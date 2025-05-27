@@ -1,0 +1,57 @@
+/* Estilos para prevenir FOUT/FOIT - Flash of Unstyled Text */
+
+/* Fallback font stack que será usada durante o carregamento */
+.font-loading * {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 
+               'Helvetica Neue', Arial, sans-serif !important;
+}
+
+/* Transição suave quando a fonte carrega */
+body, h1, h2, h3, h4, h5, h6, p, span, div, label, input, button, select, textarea {
+  transition: font-family 0.2s ease-in-out;
+}
+
+/* Evita layout shift durante carregamento de fontes */
+.font-loading .welcome-container,
+.font-loading .form-container,
+.font-loading .container {
+  opacity: 0.95;
+}
+
+/* Otimizações para o CSS de loading das fontes */
+.font-loading-overlay {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+               'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #f8f6ef 0%, #f0ede3 100%);
+}
+
+.font-loading-spinner {
+  animation: font-loading-fade-in 0.3s ease-in-out;
+}
+
+@keyframes font-loading-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Quando as fontes carregam, remove a transição */
+.fonts-loaded * {
+  transition: none;
+}
+
+/* Estilos para melhorar a experiência durante o carregamento */
+@media (prefers-reduced-motion: reduce) {
+  .font-loading-spinner::before {
+    animation: none;
+  }
+  
+  body, h1, h2, h3, h4, h5, h6, p, span, div, label, input, button, select, textarea {
+    transition: none;
+  }
+}

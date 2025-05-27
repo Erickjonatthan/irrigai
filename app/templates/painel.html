@@ -1,14 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
+<html lang="en">  <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Resultados da Análise</title>
-    <!-- Bootstrap CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />    <title>Resultados da Análise</title>
+    
+    <!-- Favicons para todos os dispositivos -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/favicon_io/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon_io/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/favicon_io/favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='img/favicon_io/site.webmanifest') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon_io/favicon.ico') }}">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#ffffff">
+    
+    <!-- Preload da fonte Raleway para carregamento otimizado -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Loader Script - deve ser carregado antes de qualquer coisa -->
+    <script src="{{ url_for('static', filename='js/font-loader.js') }}"></script>
+      <!-- Bootstrap CSS -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <!-- Font Loading CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-loading.css') }}">
+    
+    <style>
+        body {
+            font-family: "Raleway", sans-serif;
+        }
+    </style>
   </head>
   <body>
     <div class="container mt-5">

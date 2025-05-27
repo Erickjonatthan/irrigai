@@ -1,6 +1,6 @@
 import os
-from app.process.climate_analysis import calcular_e_classificar_indices_aridez, recomendar_irrigacao
-from app.process.data_processing import processar_balanco_hidrico, processar_dados_aridez, processar_precipitacao
+from app.process.climate_analysis import calcular_e_classificar_indices_aridez, recomendar_irrigacao, processar_dados_aridez
+from app.process.data_processing import processar_balanco_hidrico, processar_precipitacao
 from app.process.file_operations import criar_diretorios, obter_caminhos_graficos
 from app.process.graphics import calcular_e_gerar_grafico_rai, calcular_indices_e_gerar_graficos, gerar_grafico_indice_aridez_unep
 from app.process.map_operations import criar_mapa
