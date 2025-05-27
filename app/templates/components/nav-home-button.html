@@ -2,6 +2,10 @@
 <span
   class="fluent-color--globe-24"
   onclick="window.location.href='/'"
+  onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='/'; }"
   title="Voltar à página inicial"
   style="margin-bottom: 10px"
+  tabindex="0"
+  role="button"
+  aria-label="Voltar à página inicial"
 ></span>

@@ -18,12 +18,19 @@ class AcessoManager {
     this.loadingSubtext = document.getElementById("loadingSubtext");
     this.submitButton = document.querySelector("button[type='submit']");
   }
-
   bindEvents() {
     // Event listener para toggle de senha
     if (this.togglePasswordBtn) {
       this.togglePasswordBtn.addEventListener("click", () => {
         this.togglePasswordVisibility();
+      });
+      
+      // Adiciona suporte para navegação por teclado
+      this.togglePasswordBtn.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          this.togglePasswordVisibility();
+        }
       });
     }
 
