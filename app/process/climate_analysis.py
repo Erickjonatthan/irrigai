@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from app.process.graphics import PlotGrafico, mostraGraficoDoAno
+
 def categoria_climatica(index):
     if index >= 0.65:
         return 'Humid'

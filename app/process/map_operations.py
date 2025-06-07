@@ -40,4 +40,4 @@ def criar_mapa(latitude, longitude, _quadrado, _graficos):
     mapa_path = os.path.join(_graficos, "map.html")
     mapa.save(mapa_path)
 
-    return mapa_path, data_Json, geo_json_data
+    return data_Json

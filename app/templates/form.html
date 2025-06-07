@@ -2,7 +2,9 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>Entrada de Coordenadas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="react-devtools-ignore" content="true" />
+    <title>Entrada de Coordenadas</title>
     
     <!-- Favicons para todos os dispositivos -->
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/favicon_io/apple-touch-icon.png') }}">
@@ -35,11 +37,10 @@
         }
     </style>
 </head>
-<body>
-    <div class="container mt-5">
+<body>    <div class="container mt-5">
         <h1 class="text-center">Olá, {{ usuario }}!</h1>
         <p class="text-center">Bem-vindo ao formulário. Preencha os dados abaixo para continuar.</p>
-        <form action="/resultado" method="POST" class="p-4 border rounded shadow">
+        <form class="p-4 border rounded shadow">
             <div class="mb-3">
                 <label class="form-label">Localização Detectada:</label>
                 <p id="endereco" class="form-control-plaintext">Carregando localização...</p>

@@ -65,13 +65,31 @@ def painel():
 
     # Caminho para os resultados salvos
     user_folder = os.path.join("app/static/data", user_id)
-    resultados_path = os.path.join(user_folder, f"{user_id}_resultados.json")
-
-    # Tenta carregar os resultados do disco
+    resultados_path = os.path.join(user_folder, f"{user_id}_resultados.json")    # Tenta carregar os resultados do disco
     if os.path.exists(resultados_path):
         try:
             with open(resultados_path, "r") as f:
                 resultados_data = json.load(f)
+                  # Mapear campos antigos para os novos se necessário (compatibilidade retroativa)
+                campos_mapeamento = {
+                    'grafico_precipitacao': 'dados_grafico_precipitacao',
+                    'grafico_precipitacao_vs_evaporacao': 'dados_grafico_precipitacao_vs_evaporacao',
+                    'grafico_balanco_hidrico': 'dados_grafico_balanco_hidrico',
+                    'grafico_rai': 'dados_grafico_rai',
+                    'grafico_aridez': 'dados_grafico_aridez'
+                }
+                
+                # Atualizar os nomes dos campos se necessário
+                for campo_antigo, campo_novo in campos_mapeamento.items():
+                    if campo_antigo in resultados_data and campo_novo not in resultados_data:
+                        valor = resultados_data.pop(campo_antigo)
+                        # Se o valor é uma string (caminho de arquivo), substitui por None para indicar dados indisponíveis
+                        if isinstance(valor, str):
+                            print(f"Convertendo campo {campo_antigo} de caminho de arquivo para dados estruturados (será substituído por dados de exemplo)")
+                            resultados_data[campo_novo] = None  # Será tratado no frontend
+                        else:
+                            resultados_data[campo_novo] = valor
+                
                 resultados = ResultadosDTO(**resultados_data)  # Reconstrói o DTO a partir do JSON
         except Exception as e:
             print(f"Erro ao carregar resultados do disco: {e}")

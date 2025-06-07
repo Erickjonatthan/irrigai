@@ -1,11 +1,10 @@
-import numpy as np
 import pandas as pd
 from app.globals import stop_event  # Atualize a importação
 from app.process.data_receiving import balanco_hidrico_ano, precipitacao_ano_chirps
-from app.process.graphics import PlotGrafico, gerar_grafico_balanco_hidrico, gerar_grafico_precipitacao, mostraGraficoDoAno
+from app.process.graphics import gerar_dados_balanco_hidrico, gerar_dados_precipitacao
 
 
-def processar_balanco_hidrico(_ano_inicial, _ano_final, data_Json, _localdataName, api, head, _graficos, _NomeLocal, log=print):
+def processar_balanco_hidrico(_ano_inicial, _ano_final, data_Json, _localdataName, api, head, _NomeLocal, log=print):
     """
     Processa o balanço hídrico para os anos fornecidos e gera o gráfico correspondente.
     """
@@ -42,15 +41,12 @@ def processar_balanco_hidrico(_ano_inicial, _ano_final, data_Json, _localdataNam
     
 
     log("Gerando gráfico de balanço hídrico...")
-    grafico_balanco_hidrico_path = gerar_grafico_balanco_hidrico(
+    grafico_balanco_hidrico_dados = gerar_dados_balanco_hidrico(
         _balanco,            # DataFrame com os dados
-        _ano_inicial,        # Ano inicial
-        _ano_final,          # Ano final
         _NomeLocal,          # Nome da localização (string)
-        _graficos            # Caminho da pasta de saída
     )
 
-    return _balanco, grafico_balanco_hidrico_path
+    return _balanco, grafico_balanco_hidrico_dados
 
 
 def processar_precipitacao(_ano_inicial, _ano_final, data_Json, _localdataName, _graficos, _NomeLocal, log=print):
@@ -87,7 +83,7 @@ def processar_precipitacao(_ano_inicial, _ano_final, data_Json, _localdataName, 
 
     #log de gerando gráfico de precipitação
     log("Gerando gráfico de precipitação...")
-    grafico_precipitacao_path = gerar_grafico_precipitacao(
+    grafico_precipitacao_path = gerar_dados_precipitacao(
         precip_series,              # Series com o índice sendo o ano
         _ano_inicial,
         _ano_final,

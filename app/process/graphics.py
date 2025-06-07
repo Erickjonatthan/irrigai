@@ -25,81 +25,71 @@ def PlotGrafico(data, name, _NomeLocal, _graficos):
     return output_path
 
 
-def gerar_grafico_balanco_hidrico(df, ano_inicial, ano_final, nome_local, pasta_saida):
+def gerar_dados_balanco_hidrico(df, nome_local):
     """
-    Gera gráfico de balanço hídrico com ET, PET e Déficit ao longo dos anos.
+    Retorna dados do balanço hídrico para criação de gráfico no frontend.
     """
     if df.empty:
         return None
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    # Grupos de barras
-    largura = 0.25
-    anos = df["Ano"].astype(int)
-    x = range(len(anos))
-
-    ax.bar([i - largura for i in x], df["ET"], width=largura, label="ET (Evapotranspiração)")
-    ax.bar(x, df["PET"], width=largura, label="PET (Evapotranspiração Potencial)")
-    ax.bar([i + largura for i in x], df["Deficit"], width=largura, label="Déficit Hídrico", color='red')
-
-    # Estética
-    ax.set_title(f"Balanço Hídrico Anual - {nome_local}", fontsize=14)
-    ax.set_xlabel("Ano", fontsize=12)
-    ax.set_ylabel("Milímetros (mm)", fontsize=12)
-    ax.set_xticks(x)
-    ax.set_xticklabels(anos)
-    ax.legend()
-    ax.grid(True, linestyle='--', alpha=0.5)
-
-    # Salvar
-    os.makedirs(pasta_saida, exist_ok=True)
-    nome_arquivo = f"balanco_hidrico_{ano_inicial}_{ano_final}_{nome_local}.png".replace(" ", "_")
-    caminho = os.path.join(pasta_saida, nome_arquivo)
-    plt.tight_layout()
-    plt.savefig(caminho)
-    plt.close()
-
-    print(f"Gráfico de balanço hídrico salvo em: {caminho}")
-    return caminho
-def gerar_grafico_precipitacao(series_precipitacao, ano_inicial, ano_final, nome_local, pasta_saida):
+    anos = df["Ano"].astype(int).tolist()
+    
+    dados_grafico = {
+        "titulo": f"Balanço Hídrico Anual - {nome_local}",
+        "tipo": "bar",
+        "dados": {
+            "anos": anos,
+            "series": [
+                {
+                    "nome": "ET (Evapotranspiração)",
+                    "valores": df["ET"].tolist(),
+                    "cor": "#2E86AB"
+                },
+                {
+                    "nome": "PET (Evapotranspiração Potencial)", 
+                    "valores": df["PET"].tolist(),
+                    "cor": "#A23B72"
+                },
+                {
+                    "nome": "Déficit Hídrico",
+                    "valores": df["Deficit"].tolist(),
+                    "cor": "#F18F01"
+                }
+            ]
+        },
+        "eixos": {
+            "x": "Ano",
+            "y": "Milímetros (mm)"
+        }
+    }
+    
+    print(f"Dados de balanço hídrico preparados para o frontend")
+    return dados_grafico
+def gerar_dados_precipitacao(series_precipitacao, ano_inicial, ano_final, nome_local):
     """
-    Gera e salva um gráfico de barras com a precipitação média anual de uma área.
-
-    Parâmetros:
-      - series_precipitacao: pandas.Series contendo a precipitação média por ano
-                             (índice: ano, valor: mm)
-      - ano_inicial: ano inicial do intervalo (int)
-      - ano_final: ano final do intervalo (int)
-      - nome_local: nome da localidade (str)
-      - pasta_saida: caminho da pasta onde o gráfico será salvo (str)
-
-    Retorna:
-      - Caminho do arquivo gerado (str)
+    Retorna dados de precipitação para criação de gráfico no frontend.
     """
-    # Garante que a pasta de saída existe
-    os.makedirs(pasta_saida, exist_ok=True)
+    dados_grafico = {
+        "titulo": f"Precipitação Média Anual - {nome_local} ({ano_inicial} a {ano_final})",
+        "tipo": "bar",
+        "dados": {
+            "anos": series_precipitacao.index.tolist(),
+            "series": [
+                {
+                    "nome": "Precipitação Média",
+                    "valores": series_precipitacao.values.tolist(),
+                    "cor": "#4682B4"
+                }
+            ]
+        },
+        "eixos": {
+            "x": "Ano",
+            "y": "Precipitação Média (mm)"
+        }
+    }
 
-    # Caminho do arquivo de saída
-    nome_arquivo = f"grafico_precipitacao_{nome_local.replace(' ', '_')}_{ano_inicial}_{ano_final}.png"
-    caminho_saida = os.path.join(pasta_saida, nome_arquivo)
-
-    # Criar o gráfico
-    plt.figure(figsize=(12, 6))
-    series_precipitacao.plot(kind='bar', color='royalblue', edgecolor='black')
-
-    plt.title(f"Precipitação Média Anual - {nome_local}\n({ano_inicial} a {ano_final})", fontsize=14)
-    plt.xlabel("Ano", fontsize=12)
-    plt.ylabel("Precipitação Média (mm)", fontsize=12)
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.tight_layout()
-
-    # Salvar o gráfico
-    plt.savefig(caminho_saida)
-    plt.close()
-
-    print(f"Gráfico de precipitação salvo em: {caminho_saida}")
-    return caminho_saida
+    print(f"Dados de precipitação preparados para o frontend")
+    return dados_grafico
 
 def mostraGraficoDoAno(ano, _inDir):
     """
@@ -146,38 +136,70 @@ def calcular_indices_e_gerar_graficos(_balanco, _precipitacao_df, _ano_inicial, 
     _balanco["Indice de Aridez UNEP"] = _precipitacao_df["Precipitacao"] / _balanco["PET"]
     _balanco["Aridez"] = _precipitacao_df["Precipitacao"] / _balanco["ET"]
 
-    # Gráfico de precipitação e evaporação
-    plt.figure(figsize=(10, 5))
-    plt.plot(_balanco["Ano"], _precipitacao_df["Precipitacao"], label="Precipitation")
-    plt.plot(_balanco["Ano"], _balanco["ET"], label="Evaporation")
-    plt.xticks(np.arange(_ano_inicial, _ano_final + 1, 1), rotation=45)
-    plt.xlabel('Year')
-    plt.ylabel('Annual Total (mm)')
-    plt.title('Average annual precipitation/evaporation')
-    plt.legend()
-    plt.savefig(os.path.join(_graficos, "precipitacao_e_evaporacao.png"), format="png")
+    # Retorna dados para gráfico de precipitação e evaporação
+    dados_grafico = {
+        "titulo": "Precipitação e Evaporação Anuais Médias",
+        "tipo": "line", 
+        "dados": {
+            "anos": _balanco["Ano"].tolist(),
+            "series": [
+                {
+                    "nome": "Precipitação",
+                    "valores": _precipitacao_df["Precipitacao"].tolist(),
+                    "cor": "#1f77b4"
+                },
+                {
+                    "nome": "Evaporação",
+                    "valores": _balanco["ET"].tolist(),
+                    "cor": "#ff7f0e"
+                }
+            ]
+        },
+        "eixos": {
+            "x": "Ano",
+            "y": "Total Anual (mm)"
+        }
+    }
 
-    return os.path.join(_graficos, "precipitacao_e_evaporacao.png")
+    return dados_grafico
 
 def gerar_grafico_indice_aridez_unep(_balanco, _ano_inicial, _ano_final, _graficos):
     """
-    Gera o gráfico do índice de aridez UNEP e salva como imagem.
+    Retorna dados do índice de aridez UNEP para criação de gráfico no frontend.
     """
     z = np.polyfit(_balanco["Ano"], _balanco["Indice de Aridez UNEP"], 1)
-    p = np.poly1d(z)  # Criando um objeto polinomial
-    plt.figure(figsize=(10, 5))
-    plt.plot(_balanco["Ano"], _balanco["Indice de Aridez UNEP"], label="Aridity index")
-    plt.plot(_balanco["Ano"], p(_balanco["Ano"]), 'r-', label="Trend")
-    plt.xticks(np.arange(_ano_inicial, _ano_final + 1, 1), rotation=45)
-    plt.xlabel('Year')
-    plt.ylabel('Aridity index')
-    plt.title('Aridity index in the chosen region')
-    plt.legend()
-    plt.savefig(os.path.join(_graficos, "IA.png"), format="png")
+    p = np.poly1d(z)
+    
+    dados_grafico = {
+        "titulo": "Índice de Aridez na Região Escolhida",
+        "tipo": "line",
+        "dados": {
+            "anos": _balanco["Ano"].tolist(),
+            "series": [
+                {
+                    "nome": "Índice de Aridez",
+                    "valores": _balanco["Indice de Aridez UNEP"].tolist(),
+                    "cor": "#2E8B57"
+                },
+                {
+                    "nome": "Tendência",
+                    "valores": p(_balanco["Ano"]).tolist(),
+                    "cor": "#DC143C",
+                    "tipo": "linha"
+                }
+            ]
+        },
+        "eixos": {
+            "x": "Ano",
+            "y": "Índice de Aridez"
+        }
+    }
+    
+    return dados_grafico
 
 def calcular_e_gerar_grafico_rai(_balanco, _precipitacao_df, _graficos):
     """
-    Calcula o índice de anomalia de chuva (RAI) e gera o gráfico correspondente.
+    Calcula o índice de anomalia de chuva (RAI) e retorna dados para o frontend.
     """
     # Cálculo do índice de anomalia de chuva (RAI)
     media_precipitacao = _precipitacao_df["Precipitacao"].mean()
@@ -187,7 +209,24 @@ def calcular_e_gerar_grafico_rai(_balanco, _precipitacao_df, _graficos):
         lambda precipitacao: (precipitacao - media_precipitacao) / desvio_precipitacao * 100
     )
 
-    # Gráfico do índice de anomalia de chuva (RAI)
-    _balanco.plot(kind='bar', x='Ano', y='RAI', title='Rain Anomaly Index (RAI)', xlabel='Anos', ylabel='RAI', color='blue')
-    plt.savefig(os.path.join(_graficos, "RAI.png"), format="png")
-    print("Gráfico do índice de anomalia de chuva (RAI) salvo com sucesso.")
+    dados_grafico = {
+        "titulo": "Rain Anomaly Index (RAI)",
+        "tipo": "bar",
+        "dados": {
+            "anos": _balanco["Ano"].tolist(),
+            "series": [
+                {
+                    "nome": "RAI",
+                    "valores": _balanco["RAI"].tolist(),
+                    "cor": "#4169E1"
+                }
+            ]
+        },
+        "eixos": {
+            "x": "Anos",
+            "y": "RAI"
+        }
+    }
+    
+    print("Dados do gráfico RAI preparados para o frontend.")
+    return dados_grafico

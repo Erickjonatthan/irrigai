@@ -44,14 +44,12 @@ def baixar_dados_thread(latitude, longitude, cultura, estagio, thread_id, head, 
             return
 
         # Armazena os resultados apenas se o processo não foi interrompido
-        resultados_globais[thread_id]["resultados"] = resultados
-
-        # Salva os resultados em disco
+        resultados_globais[thread_id]["resultados"] = resultados        # Salva os resultados em disco
         user_folder = os.path.join("app/static/data", user_id)
         os.makedirs(user_folder, exist_ok=True)
         resultados_path = os.path.join(user_folder, f"{user_id}_resultados.json")
         with open(resultados_path, "w") as f:
-            json.dump(resultados.__dict__, f, default=str)  # Converte o DTO para JSON
+            json.dump(resultados.to_dict(), f, default=str)  # Converte o DTO para JSON usando to_dict()
     except Exception as e:
         if not stop_event.is_set():
             resultados_globais[thread_id]["logs"].append(f"Erro: {str(e)}")

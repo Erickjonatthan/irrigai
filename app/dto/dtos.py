@@ -1,17 +1,19 @@
 class ResultadosDTO:
     def __init__(self, nome_local, ano_inicial, ano_final, area, latitude, longitude,
-                 grafico_precipitacao, grafico_precipitacao_vs_evaporacao, grafico_balanco_hidrico, grafico_rai, grafico_aridez, mapa_IA, indices_e_classificacoes, recomendacoes):
+                 dados_grafico_precipitacao, dados_grafico_precipitacao_vs_evaporacao, 
+                 dados_grafico_balanco_hidrico, dados_grafico_rai, dados_grafico_aridez, 
+                 mapa_IA, indices_e_classificacoes, recomendacoes):
         self.nome_local = nome_local
         self.ano_inicial = ano_inicial
         self.ano_final = ano_final
         self.area = area
         self.latitude = latitude
         self.longitude = longitude
-        self.grafico_precipitacao = grafico_precipitacao
-        self.grafico_precipitacao_vs_evaporacao = grafico_precipitacao_vs_evaporacao
-        self.grafico_balanco_hidrico = grafico_balanco_hidrico
-        self.grafico_rai = grafico_rai
-        self.grafico_aridez = grafico_aridez
+        self.dados_grafico_precipitacao = dados_grafico_precipitacao
+        self.dados_grafico_precipitacao_vs_evaporacao = dados_grafico_precipitacao_vs_evaporacao
+        self.dados_grafico_balanco_hidrico = dados_grafico_balanco_hidrico
+        self.dados_grafico_rai = dados_grafico_rai
+        self.dados_grafico_aridez = dados_grafico_aridez
         self.mapa_IA = mapa_IA
         self.indices_e_classificacoes = indices_e_classificacoes
         self.recomendacoes = recomendacoes
@@ -24,11 +26,11 @@ class ResultadosDTO:
             "area": self.area,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "grafico_precipitacao": self.grafico_precipitacao,
-            "grafico_precipitacao_vs_evaporacao": self.grafico_precipitacao_vs_evaporacao,
-            "grafico_balanco_hidrico": self.grafico_balanco_hidrico,
-            "grafico_rai": self.grafico_rai,
-            "grafico_aridez": self.grafico_aridez,
+            "dados_grafico_precipitacao": self.dados_grafico_precipitacao,
+            "dados_grafico_precipitacao_vs_evaporacao": self.dados_grafico_precipitacao_vs_evaporacao,
+            "dados_grafico_balanco_hidrico": self.dados_grafico_balanco_hidrico,
+            "dados_grafico_rai": self.dados_grafico_rai,
+            "dados_grafico_aridez": self.dados_grafico_aridez,
             "mapa_IA": self.mapa_IA,
             "indices_e_classificacoes": self.indices_e_classificacoes,
             "recomendacoes": self.recomendacoes,
