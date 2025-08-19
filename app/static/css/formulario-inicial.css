@@ -1,0 +1,374 @@
+/* CSS para o formulário inicial - Irriga.ai */
+
+/* Container principal do formulário */
+.formulario-container {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    max-width: 480px;
+    width: 90%;
+    margin: 20px auto;
+    padding: 0;
+    position: relative;
+    z-index: 10;
+    animation: entrada 0.8s ease-out forwards;
+}
+
+/* Header do formulário */
+.formulario-header {
+    text-align: center;
+    padding: 30px 20px 0 20px;
+    margin-bottom: 20px;
+}
+
+.formulario-header .logo-irrigai {
+    width: 120px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.formulario-titulo {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+}
+
+.formulario-subtitulo {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Indicador de progresso */
+.progress-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 20px;
+    margin-bottom: 10px;
+}
+
+.progress-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #e0e6ed;
+    transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+    background-color: #007bff;
+    transform: scale(1.2);
+}
+
+.progress-dot.completed {
+    background-color: #28a745;
+}
+
+/* Conteúdo do formulário */
+.formulario-conteudo {
+    padding: 0 25px 25px 25px;
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.etapa {
+    display: none;
+    animation: slideIn 0.4s ease-out forwards;
+}
+
+.etapa.ativa {
+    display: block;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Pergunta */
+.pergunta {
+    margin-bottom: 25px;
+}
+
+.pergunta-texto {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+/* Alternativas */
+.alternativas {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.alternativa {
+    position: relative;
+}
+
+.alternativa input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.alternativa-label {
+    display: flex;
+    align-items: flex-start;
+    padding: 16px 20px;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    min-height: 50px;
+}
+
+.alternativa-label::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid #dee2e6;
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: all 0.3s ease;
+    background: #ffffff;
+}
+
+.alternativa input[type="radio"]:checked + .alternativa-label {
+    background: #e3f2fd;
+    border-color: #007bff;
+    color: #0056b3;
+}
+
+.alternativa input[type="radio"]:checked + .alternativa-label::before {
+    background: #007bff;
+    border-color: #007bff;
+    box-shadow: inset 0 0 0 3px #ffffff;
+}
+
+.alternativa-label:hover {
+    background: #f1f3f4;
+    border-color: #c6d0dc;
+}
+
+/* Campo de texto para "Outra" opção */
+.campo-texto {
+    margin-top: 8px;
+    padding: 0 32px;
+}
+
+.campo-texto input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+}
+
+.campo-texto input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.campo-texto input::placeholder {
+    color: #adb5bd;
+}
+
+/* Botões de navegação */
+.navegacao-formulario {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    margin-top: auto;
+}
+
+.btn-formulario {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    min-width: 100px;
+}
+
+.btn-voltar {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 2px solid #e9ecef;
+}
+
+.btn-voltar:hover:not(:disabled) {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.btn-continuar {
+    background: #007bff;
+    color: #ffffff;
+}
+
+.btn-continuar:hover:not(:disabled) {
+    background: #0056b3;
+}
+
+.btn-finalizar {
+    background: #28a745;
+    color: #ffffff;
+}
+
+.btn-finalizar:hover:not(:disabled) {
+    background: #1e7e34;
+}
+
+.btn-formulario:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Indicador de etapa atual */
+.etapa-info {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+    .formulario-container {
+        border-radius: 0;
+        min-height: 100vh;
+        box-shadow: none;
+        width: 100%;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .formulario-header {
+        padding: 20px 20px 0 20px;
+    }
+
+    .formulario-titulo {
+        font-size: 1.3rem;
+    }
+
+    .formulario-conteudo {
+        padding: 0 20px 20px 20px;
+        flex-grow: 1;
+        min-height: auto;
+    }
+
+    .alternativa-label {
+        padding: 14px 16px;
+        font-size: 0.9rem;
+    }
+
+    .btn-formulario {
+        padding: 14px 20px;
+        font-size: 0.9rem;
+        min-width: 90px;
+    }
+
+    .progress-indicator {
+        padding: 15px;
+    }
+
+    .navegacao-formulario {
+        padding: 15px 0 0 0;
+    }
+}
+
+@media (max-width: 400px) {
+    .formulario-conteudo {
+        padding: 0 15px 15px 15px;
+    }
+    
+    .alternativa-label {
+        padding: 12px 14px;
+    }
+
+    .alternativa-label::before {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+    }
+}
+
+/* Animação de entrada */
+@keyframes entrada {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estados de validação */
+.campo-invalido input {
+    border-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.mensagem-erro {
+    color: #dc3545;
+    font-size: 0.8rem;
+    margin-top: 5px;
+    padding-left: 32px;
+}
+
+/* Loading state */
+.btn-formulario.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn-formulario.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    border: 2px solid transparent;
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}

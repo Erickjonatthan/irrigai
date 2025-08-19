@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="react-devtools-ignore" content="true" />
+    <title>Irriga.ai - Informações Iniciais</title>
+    
+    <!-- Favicons para todos os dispositivos -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/favicon_io/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon_io/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/favicon_io/favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='img/favicon_io/site.webmanifest') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon_io/favicon.ico') }}">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#ffffff">
+    
+    <!-- Preload da fonte Raleway para carregamento otimizado -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Loader Script - deve ser carregado antes de qualquer coisa -->
+    <script src="{{ url_for('static', filename='js/font-loader.js') }}"></script>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+    
+    <!-- CSS personalizado -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-loading.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/formulario-inicial.css') }}" />
+</head>
+<body>
+    <div class="shape-leaves"></div>
+    <div class="shape-rain"></div>
+    
+    <div class="formulario-container">
+        <!-- Header -->
+        <div class="formulario-header">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Irriga.ai" class="logo-irrigai" />
+            <h1 class="formulario-titulo">Sobre a sua Cultura</h1>
+            <p class="formulario-subtitulo">
+                <span class="etapa-info">1/9</span>
+            </p>
+        </div>
+
+        <!-- Indicador de progresso -->
+        <div class="progress-indicator">
+            <div class="progress-dot active"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+        </div>
+
+        <!-- Conteúdo do formulário -->
+        <div class="formulario-conteudo">
+            <!-- Etapa 1: Qual cultura você está cultivando? -->
+            <div id="etapa-1" class="etapa ativa">
+                <div class="pergunta">
+                    <h2 class="pergunta-texto">Qual cultura você está cultivando?</h2>
+                    <div class="alternativas">
+                        <div class="alternativa">
+                            <input type="radio" id="cultura-milho" name="cultura" value="milho" data-etapa="1" data-texto="Milho">
+                            <label for="cultura-milho" class="alternativa-label">Milho</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="cultura-soja" name="cultura" value="soja" data-etapa="1" data-texto="Soja">
+                            <label for="cultura-soja" class="alternativa-label">Soja</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="cultura-feijao" name="cultura" value="feijao" data-etapa="1" data-texto="Feijão">
+                            <label for="cultura-feijao" class="alternativa-label">Feijão</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="cultura-outra" name="cultura" value="outra" data-etapa="1" data-texto="Outra">
+                            <label for="cultura-outra" class="alternativa-label">Outra (por favor, especifique qual)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 2: Quando você plantou? -->
+            <div id="etapa-2" class="etapa">
+                <div class="pergunta">
+                    <h2 class="pergunta-texto">Quando você plantou (ou vai plantar) essa cultura?</h2>
+                    <div class="alternativas">
+                        <div class="alternativa">
+                            <input type="radio" id="plantio-mes" name="plantio_tempo" value="mes" data-etapa="2" data-texto="No mês específico">
+                            <label for="plantio-mes" class="alternativa-label">No mês de (especifique o mês)</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="plantio-estacao" name="plantio_tempo" value="estacao" data-etapa="2" data-texto="Na estação específica">
+                            <label for="plantio-estacao" class="alternativa-label">Na estação de (especifique a estação)</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="plantio-dias" name="plantio_tempo" value="dias" data-etapa="2" data-texto="Há alguns dias/semanas">
+                            <label for="plantio-dias" class="alternativa-label">Não tenho a data exata, mas foi há aproximadamente (especifique)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 3: Ciclo da cultura -->
+            <div id="etapa-3" class="etapa">
+                <div class="pergunta">
+                    <h2 class="pergunta-texto">Quantos dias, aproximadamente, sua cultura leva do plantio até a colheita?</h2>
+                    <div class="alternativas">
+                        <div class="alternativa">
+                            <input type="radio" id="ciclo-100" name="ciclo" value="menos_100" data-etapa="3" data-texto="Menos de 100 dias">
+                            <label for="ciclo-100" class="alternativa-label">Menos de 100 dias</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="ciclo-100-150" name="ciclo" value="100_150" data-etapa="3" data-texto="De 100 a 150 dias">
+                            <label for="ciclo-100-150" class="alternativa-label">De 100 a 150 dias</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="ciclo-151-200" name="ciclo" value="151_200" data-etapa="3" data-texto="De 151 a 200 dias">
+                            <label for="ciclo-151-200" class="alternativa-label">De 151 a 200 dias</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="ciclo-200-mais" name="ciclo" value="mais_200" data-etapa="3" data-texto="Mais de 200 dias">
+                            <label for="ciclo-200-mais" class="alternativa-label">Mais de 200 dias</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 4: Preparo do solo -->
+            <div id="etapa-4" class="etapa">
+                <div class="pergunta">
+                    <h2 class="pergunta-texto">Como você preparou o solo para o plantio?</h2>
+                    <div class="alternativas">
+                        <div class="alternativa">
+                            <input type="radio" id="preparo-convencional" name="preparo_solo" value="convencional" data-etapa="4" data-texto="Plantio Convencional">
+                            <label for="preparo-convencional" class="alternativa-label">Plantio Convencional (com aração, gradagem, etc.)</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="preparo-direto" name="preparo_solo" value="direto" data-etapa="4" data-texto="Plantio Direto">
+                            <label for="preparo-direto" class="alternativa-label">Plantio Direto (com palhada na superfície, sem revolvimento)</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="preparo-outro" name="preparo_solo" value="outro" data-etapa="4" data-texto="Outro tipo de preparo">
+                            <label for="preparo-outro" class="alternativa-label">Outro tipo de preparo (por favor, especifique)</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="preparo-nao-sei" name="preparo_solo" value="nao_sei" data-etapa="4" data-texto="Não sei / Não se aplica">
+                            <label for="preparo-nao-sei" class="alternativa-label">Não sei / Não se aplica (se for cultura perene já estabelecida)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 5: Tipo de solo -->
+            <div id="etapa-5" class="etapa">
+                <div class="pergunta">
+                    <h2 class="pergunta-texto">Qual é o tipo de solo predominante na sua área de cultivo?</h2>
+                    <div class="alternativas">
+                        <div class="alternativa">
+                            <input type="radio" id="solo-arenoso" name="tipo_solo" value="arenoso" data-etapa="5" data-texto="Arenoso">
+                            <label for="solo-arenoso" class="alternativa-label">Arenoso: Solto, drena a água muito rápido, parece areia</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="solo-franco" name="tipo_solo" value="franco" data-etapa="5" data-texto="Franco">
+                            <label for="solo-franco" class="alternativa-label">Franco: Equilibrado, nem muito solto nem muito pesado, drena bem mas retém água</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="solo-argiloso" name="tipo_solo" value="argiloso" data-etapa="5" data-texto="Argiloso">
+                            <label for="solo-argiloso" class="alternativa-label">Argiloso: Pesado, grudento quando molhado, retém muita água por mais tempo</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="solo-nao-sei" name="tipo_solo" value="nao_sei" data-etapa="5" data-texto="Não sei">
+                            <label for="solo-nao-sei" class="alternativa-label">Não sei / Preciso de análise de solo</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 6: Umidade do solo -->
+            <div id="etapa-6" class="etapa">
+                <div class="pergunta">
+                    <h2 class="pergunta-texto">Pensando na capacidade do seu solo de guardar água para a planta, você tem informações sobre a umidade dele?</h2>
+                    <div class="alternativas">
+                        <div class="alternativa">
+                            <input type="radio" id="umidade-analise" name="umidade_solo" value="analise" data-etapa="6" data-texto="Sim, tenho análise de solo">
+                            <label for="umidade-analise" class="alternativa-label">Sim, tenho análise de solo (forneça os valores)</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="umidade-descricao" name="umidade_solo" value="descricao" data-etapa="6" data-texto="Sei descrever o comportamento">
+                            <label for="umidade-descricao" class="alternativa-label">Meu solo retém água de forma (especifique: pouca/média/muita)</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="umidade-sensor" name="umidade_solo" value="sensor" data-etapa="6" data-texto="Tenho sensor de umidade">
+                            <label for="umidade-sensor" class="alternativa-label">Não sei os valores exatos, mas tenho um sensor de umidade no solo</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="umidade-nao-sei" name="umidade_solo" value="nao_sei" data-etapa="6" data-texto="Não sei e não tenho sensor">
+                            <label for="umidade-nao-sei" class="alternativa-label">Não sei e não tenho sensor</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 7: Profundidade das raízes -->
+            <div id="etapa-7" class="etapa">
+                <div class="pergunta">
+                    <h2 class="pergunta-texto">Até que profundidade as raízes da sua cultura geralmente se desenvolvem e buscam água no solo?</h2>
+                    <div class="alternativas">
+                        <div class="alternativa">
+                            <input type="radio" id="raiz-30" name="profundidade_raiz" value="ate_30" data-etapa="7" data-texto="Até 30 centímetros">
+                            <label for="raiz-30" class="alternativa-label">Até 30 centímetros de profundidade</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="raiz-31-60" name="profundidade_raiz" value="31_60" data-etapa="7" data-texto="De 31 a 60 centímetros">
+                            <label for="raiz-31-60" class="alternativa-label">De 31 a 60 centímetros de profundidade</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="raiz-61-90" name="profundidade_raiz" value="61_90" data-etapa="7" data-texto="De 61 a 90 centímetros">
+                            <label for="raiz-61-90" class="alternativa-label">De 61 a 90 centímetros de profundidade</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="raiz-90-mais" name="profundidade_raiz" value="mais_90" data-etapa="7" data-texto="Mais de 90 centímetros">
+                            <label for="raiz-90-mais" class="alternativa-label">Mais de 90 centímetros de profundidade</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 8: Tipo de irrigação -->
+            <div id="etapa-8" class="etapa">
+                <div class="pergunta">
+                    <h2 class="pergunta-texto">Qual tipo de sistema de irrigação você utiliza?</h2>
+                    <div class="alternativas">
+                        <div class="alternativa">
+                            <input type="radio" id="irrigacao-aspersao" name="tipo_irrigacao" value="aspersao" data-etapa="8" data-texto="Aspersão">
+                            <label for="irrigacao-aspersao" class="alternativa-label">Aspersão (ex: pivô central, convencional, autopropelido)</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="irrigacao-localizada" name="tipo_irrigacao" value="localizada" data-etapa="8" data-texto="Localizada">
+                            <label for="irrigacao-localizada" class="alternativa-label">Localizada (ex: gotejamento, microaspersão)</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="irrigacao-superficie" name="tipo_irrigacao" value="superficie" data-etapa="8" data-texto="Superfície">
+                            <label for="irrigacao-superficie" class="alternativa-label">Superfície (ex: sulcos, inundação)</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="irrigacao-nenhuma" name="tipo_irrigacao" value="nenhuma" data-etapa="8" data-texto="Não utilizo irrigação">
+                            <label for="irrigacao-nenhuma" class="alternativa-label">Não utilizo irrigação (cultivo de sequeiro)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etapa 9: Eficiência do sistema -->
+            <div id="etapa-9" class="etapa">
+                <div class="pergunta">
+                    <h2 class="pergunta-texto">Qual a eficiência do seu sistema de irrigação?</h2>
+                    <p style="font-size: 0.9rem; color: #6c757d; margin-bottom: 20px;">
+                        É a porcentagem da água aplicada que realmente chega à planta. Se não souber, podemos usar um valor médio para o tipo de sistema.
+                    </p>
+                    <div class="alternativas">
+                        <div class="alternativa">
+                            <input type="radio" id="eficiencia-exata" name="eficiencia" value="exata" data-etapa="9" data-texto="Tenho o valor exato">
+                            <label for="eficiencia-exata" class="alternativa-label">Tenho o valor exato (especifique a porcentagem)</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="eficiencia-media" name="eficiencia" value="media" data-etapa="9" data-texto="Usar valor médio">
+                            <label for="eficiencia-media" class="alternativa-label">É um sistema de irrigação, usem um valor médio</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="eficiencia-nao-sei" name="eficiencia" value="nao_sei" data-etapa="9" data-texto="Não sei">
+                            <label for="eficiencia-nao-sei" class="alternativa-label">Não sei</label>
+                        </div>
+                        <div class="alternativa">
+                            <input type="radio" id="eficiencia-nao-aplica" name="eficiencia" value="nao_aplica" data-etapa="9" data-texto="Não se aplica">
+                            <label for="eficiencia-nao-aplica" class="alternativa-label">Não se aplica (se não utiliza irrigação)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegação -->
+            <div class="navegacao-formulario">
+                <button type="button" id="btn-voltar" class="btn-formulario btn-voltar" style="display: none;">
+                    Voltar
+                </button>
+                
+                <button type="button" id="btn-continuar" class="btn-formulario btn-continuar" disabled>
+                    Continuar
+                </button>
+                
+                <button type="button" id="btn-finalizar" class="btn-formulario btn-finalizar" style="display: none;" disabled>
+                    Finalizar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/formulario-inicial.js') }}"></script>
+</body>
+</html>

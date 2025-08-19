@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="react-devtools-ignore" content="true" />
+    <title>Irriga.ai - Aplicativo</title>
+    
+    <!-- Favicons para todos os dispositivos -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/favicon_io/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon_io/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/favicon_io/favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='img/favicon_io/site.webmanifest') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon_io/favicon.ico') }}">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#ffffff">
+    
+    <!-- Preload da fonte Raleway para carregamento otimizado -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Loader Script - deve ser carregado antes de qualquer coisa -->
+    <script src="{{ url_for('static', filename='js/font-loader.js') }}"></script>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+    
+    <!-- CSS personalizado -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-loading.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app-layout.css') }}" />
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Irriga.ai" class="logo-irrigai" />
+        </header>
+
+        <!-- Conteúdo Principal -->
+        <main class="app-content">
+            <!-- Seção Home -->
+            <section id="section-home" class="app-section active">
+                <div class="home-welcome">
+                    <h1 class="welcome-title">Bem-vindo ao Irriga.ai!</h1>
+                    <p class="welcome-subtitle">Como está sua plantação hoje?</p>
+                </div>
+
+                <!-- Mapa de Índice de Aridez - Primeira informação em linha completa -->
+                <div id="mapa-aridez" class="content-card mapa-info" style="display: none;">
+                    <div class="card-title">
+                        <span class="card-icon">🗺️</span>
+                        Mapa de Índice de Aridez (IA)
+                    </div>
+                    <div class="card-description mb-3">
+                        Visualização geográfica do índice de aridez da sua região para melhor compreensão das condições climáticas.
+                    </div>
+                    <div class="mapa-container">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">Carregando mapa...</div>
+                        <iframe id="iframe-mapa" style="display: none;" frameborder="0"></iframe>
+                    </div>
+                    <button class="card-button" id="expandir-mapa" style="margin-top: 15px;">
+                        <span class="card-icon">🔍</span>
+                        Expandir Mapa
+                    </button>
+                </div>
+
+                <!-- Cards de Informações Principais em Grid -->
+                <div class="cards-grid">
+
+
+                    <!-- Card de Previsão do Tempo -->
+                    <div class="content-card weather-info">
+                        <div class="card-title">
+                            <span class="card-icon">🌤️</span>
+                            Previsão e Clima
+                        </div>
+                        <div class="card-description">
+                            Dados meteorológicos atuais e previsões para auxiliar nas decisões de irrigação da sua cultura.
+                        </div>
+                        <div id="dados-clima" class="mt-3">
+                            <div class="loading-spinner" style="width: 20px; height: 20px; margin: 10px auto;"></div>
+                            <div class="loading-text">Carregando dados climáticos...</div>
+                        </div>
+                    </div>
+
+                    <!-- Card de Status da Análise -->
+                    <div class="content-card" id="status-analise">
+                        <div class="card-title">
+                            <span class="card-icon">📊</span>
+                            Status da Análise
+                        </div>
+                        <div class="card-description">
+                            <div class="loading-spinner" style="width: 20px; height: 20px; margin: 10px auto;"></div>
+                            <div class="loading-text">Verificando análises...</div>
+                        </div>
+                    </div>
+
+                    <!-- Card de Índices Principais -->
+                    <div class="content-card" id="indices-principais" style="display: none;">
+                        <div class="card-title">
+                            <span class="card-icon">📈</span>
+                            Índices Principais
+                        </div>
+                        <div class="card-description" id="dados-indices">
+                            <!-- Será preenchido dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção de Gráfico Rápido -->
+                <div id="grafico-rapido" class="content-card" style="display: none; margin-top: 20px;">
+                    <div class="card-title">
+                        <span class="card-icon">📊</span>
+                        Precipitação Anual
+                    </div>
+                    <div style="position: relative; height: 250px; margin-top: 15px;">
+                        <canvas id="grafico-precipitacao"></canvas>
+                    </div>
+                    <button class="card-button" data-action="ver-analise" style="margin-top: 15px;">
+                        Ver Análise Completa
+                    </button>
+                </div>
+
+                <!-- Card de Localização e Período (posicionado abaixo do gráfico) -->
+                <div class="content-card" id="info-localizacao" style="margin-top: 20px;">
+                    <div class="card-title">
+                        <span class="card-icon">🏡</span>
+                        Sua Propriedade
+                    </div>
+                    <div class="card-description" id="dados-localizacao">
+                        <div class="loading-spinner" style="width: 20px; height: 20px; margin: 10px auto;"></div>
+                        <div class="loading-text">Carregando informações...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção Cultivo -->
+            <section id="section-cultivo" class="app-section">
+                <h2 class="section-title">Meu Cultivo</h2>
+                
+                <!-- Recomendações de Irrigação -->
+                <div id="recomendacoes-cultivo" class="content-card" style="display: none; margin-bottom: 20px;">
+                    <div class="card-title">
+                        <span class="card-icon">💡</span>
+                        Recomendações de Irrigação
+                    </div>
+                    <div class="card-description" id="lista-recomendacoes-cultivo">
+                        <!-- Será preenchido dinamicamente -->
+                    </div>
+                </div>
+                
+                <div class="cards-grid">
+                    <!-- Card de Análise Atual -->
+                    <div class="content-card">
+                        <div class="card-title">
+                            <span class="card-icon">🌱</span>
+                            Análise Atual
+                        </div>
+                        <div class="card-description">
+                            Visualize os dados da sua última análise de irrigação e balanço hídrico.
+                        </div>
+                        <button class="card-button" data-action="ver-analise">
+                            Ver Resultados
+                        </button>
+                    </div>
+
+                    <!-- Card de Nova Análise -->
+                    <div class="content-card">
+                        <div class="card-title">
+                            <span class="card-icon">📍</span>
+                            Nova Análise
+                        </div>
+                        <div class="card-description">
+                            Realize uma nova análise para obter dados atualizados sobre sua cultura e localização.
+                        </div>
+                        <button class="card-button secondary" data-action="nova-analise">
+                            Iniciar Análise
+                        </button>
+                    </div>
+
+                    <!-- Card de Histórico -->
+                    <div class="content-card">
+                        <div class="card-title">
+                            <span class="card-icon">📈</span>
+                            Histórico
+                        </div>
+                        <div class="card-description">
+                            Acompanhe o histórico das suas análises e compare resultados ao longo do tempo.
+                        </div>
+                        <button class="card-button" data-action="ver-historico">
+                            Ver Histórico
+                        </button>
+                    </div>
+
+                    <!-- Card de Dicas -->
+                    <div class="content-card">
+                        <div class="card-title">
+                            <span class="card-icon">💡</span>
+                            Dicas de Cultivo
+                        </div>
+                        <div class="card-description">
+                            Receba dicas personalizadas baseadas na sua cultura e condições locais.
+                        </div>
+                        <button class="card-button" data-action="ver-dicas">
+                            Ver Dicas
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção Notícias -->
+            <section id="section-noticias" class="app-section">
+                <h2 class="section-title">Notícias Agrícolas</h2>
+                
+                <div id="noticias-container">
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">Carregando notícias...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção Configurações -->
+            <section id="section-configuracoes" class="app-section">
+                <h2 class="section-title">Configurações</h2>
+                
+                <div class="cards-grid">
+                    <!-- Card de Perfil -->
+                    <div class="content-card">
+                        <div class="card-title">
+                            <span class="card-icon">👤</span>
+                            Perfil do Usuário
+                        </div>
+                        <div class="card-description">
+                            Gerencie suas informações pessoais e dados da sua propriedade.
+                        </div>
+                        <button class="card-button" data-action="configurar-perfil">
+                            Configurar
+                        </button>
+                    </div>
+
+                    <!-- Card de Dados da Cultura -->
+                    <div class="content-card">
+                        <div class="card-title">
+                            <span class="card-icon">🌾</span>
+                            Dados da Cultura
+                        </div>
+                        <div class="card-description">
+                            Atualize as informações sobre sua cultura, solo e sistema de irrigação.
+                        </div>
+                        <button class="card-button" data-action="editar-cultura">
+                            Editar Dados
+                        </button>
+                    </div>
+
+                    <!-- Card de Notificações -->
+                    <div class="content-card">
+                        <div class="card-title">
+                            <span class="card-icon">🔔</span>
+                            Notificações
+                        </div>
+                        <div class="card-description">
+                            Configure alertas sobre irrigação, clima e outras informações importantes.
+                        </div>
+                        <button class="card-button" data-action="configurar-notificacoes">
+                            Configurar
+                        </button>
+                    </div>
+
+                    <!-- Card de Sobre -->
+                    <div class="content-card">
+                        <div class="card-title">
+                            <span class="card-icon">ℹ️</span>
+                            Sobre o App
+                        </div>
+                        <div class="card-description">
+                            Informações sobre o Irriga.ai, versão e suporte.
+                        </div>
+                        <button class="card-button secondary" data-action="sobre-app">
+                            Ver Informações
+                        </button>
+                    </div>
+
+                    <!-- Card de Sair -->
+                    <div class="content-card">
+                        <div class="card-title">
+                            <span class="card-icon">🚪</span>
+                            Sair da Conta
+                        </div>
+                        <div class="card-description">
+                            Fazer logout e retornar à tela de acesso.
+                        </div>
+                        <button class="card-button" style="background: #dc3545;" onclick="window.location.href='/logout'">
+                            Sair
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Navegação Inferior -->
+        <nav class="bottom-navigation">
+            <div class="nav-item active" data-section="home">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-label">Home</div>
+            </div>
+            <div class="nav-item" data-section="cultivo">
+                <div class="nav-icon">🌱</div>
+                <div class="nav-label">Cultivo</div>
+            </div>
+            <div class="nav-item" data-section="noticias">
+                <div class="nav-icon">📰</div>
+                <div class="nav-label">Notícias</div>
+            </div>
+            <div class="nav-item" data-section="configuracoes">
+                <div class="nav-icon">⚙️</div>
+                <div class="nav-label">Configurações</div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Modal para expandir mapa -->
+    <div class="modal fade" id="mapaModal" tabindex="-1" role="dialog" aria-labelledby="mapaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mapaModalLabel">Mapa de Índice de Aridez</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div style="position: relative; height: 500px;">
+                        <iframe id="iframe-mapa-modal" style="width: 100%; height: 100%; border: none;" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/app-navegacao.js') }}"></script>
+</body>
+</html>
