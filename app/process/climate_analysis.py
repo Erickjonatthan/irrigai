@@ -5,11 +5,11 @@ from app.process.graphics import PlotGrafico, mostraGraficoDoAno
 
 def categoria_climatica(index):
     if index >= 0.65:
-        return 'Humid'
+        return 'Úmida'
     elif index >= 0.5:
         return 'Subhumid'
     elif index >= 0.2:
-        return 'Semiarid'
+        return 'Semiárida'
     elif index >= 0.05:
         return 'Arid'
     else:
@@ -69,21 +69,8 @@ def recomendar_irrigacao(cultura, estagio, dados_ET, dados_PET, dados_precipitac
     ano_inicial = df["Ano"].iloc[0]
     ano_final = df["Ano"].iloc[-1]
 
-    if anos_irrigacao > total_anos / 2:
-        recomendacao = (
-            f"Entre os anos de {ano_inicial} e {ano_final}, a cultura {cultura} no estágio {estagio} (Kc = {kc}) apresentou, em média, "
-            f"um déficit hídrico de {deficit_medio:.1f} mm/ano. "
-            f"Em {anos_irrigacao} de {total_anos} anos analisados, foi recomendado realizar irrigação. "
-            f"💧 Recomenda-se atenção à irrigação nesse período."
-        )
-    else:
-        recomendacao = (
-            f"Entre os anos de {ano_inicial} e {ano_final}, a cultura {cultura} no estágio {estagio} (Kc = {kc}) apresentou, em média, "
-            f"um déficit hídrico de {deficit_medio:.1f} mm/ano. "
-            f"Na maioria dos anos, a irrigação provavelmente não foi necessária."
-        )
-
-    return [recomendacao]
+    # Recomendações de irrigação removidas conforme solicitado
+    return []
 
 
 def calcular_e_classificar_indices_aridez(_balanco, _ano_inicial, _ano_final):

@@ -316,6 +316,82 @@ def painel():
     # Passa os resultados para o template
     return render_template("painel.html", resultados=resultados)
 
+@main_bp.route("/api/dados-formulario-inicial", methods=["GET"])
+def api_dados_formulario_inicial():
+    if "head" not in session:
+        return jsonify({"erro": "Usuário não autenticado"}), 401
+
+    try:
+        user_id = session.get("user_id")
+        user_folder = os.path.join("app/static/data", user_id)
+        formulario_inicial_path = os.path.join(user_folder, "formulario_inicial.json")
+
+        if not os.path.exists(formulario_inicial_path):
+            return jsonify({"tem_dados": False}), 404
+
+        with open(formulario_inicial_path, "r", encoding="utf-8") as f:
+            dados_formulario = json.load(f)
+            
+        # Extrair dados das respostas do formulário inicial
+        respostas = dados_formulario.get("respostas", {})
+        
+        # Retornar os dados no formato esperado pelo IrrigacaoManager
+        dados_formatados = {
+            "tem_dados": True,
+            "respostas": {
+                "etapa_1": {
+                    "valor": respostas.get("etapa_1", {}).get("valor", ""),
+                    "texto": respostas.get("etapa_1", {}).get("texto", "")
+                },
+                "etapa_3": {
+                    "valor": respostas.get("etapa_3", {}).get("valor", "")
+                },
+                "etapa_5": {
+                    "valor": respostas.get("etapa_5", {}).get("valor", "")
+                }
+            },
+            "coordenadas": {
+                "latitude": respostas.get("etapa_6", {}).get("texto_adicional", ""),
+                "longitude": respostas.get("etapa_7", {}).get("texto_adicional", "")
+            }
+        }
+        
+        return jsonify(dados_formatados)
+
+    except Exception as e:
+        print(f"Erro ao carregar dados do formulário inicial: {e}")
+        return jsonify({"erro": "Erro interno do servidor"}), 500
+
+@main_bp.route("/api/dados-climaticos", methods=["GET"])
+def api_dados_climaticos():
+    """Retorna os dados climáticos para cálculo de irrigação"""
+    if "head" not in session:
+        return jsonify({"erro": "Usuário não autenticado"}), 401
+
+    try:
+        user_id = session.get("user_id")
+        user_folder = os.path.join("app/static/data", user_id)
+        resultados_path = os.path.join(user_folder, f"{user_id}_resultados.json")
+        
+        if not os.path.exists(resultados_path):
+            return jsonify({"erro": "Dados climáticos não encontrados"}), 404
+        
+        # Carrega os dados de resultados
+        with open(resultados_path, "r", encoding="utf-8") as f:
+            dados_resultados = json.load(f)
+        
+        # Extrai os dados climáticos necessários
+        dados_climaticos = {
+            "dados_grafico_balanco_hidrico": dados_resultados.get("dados_grafico_balanco_hidrico", {}),
+            "dados_grafico_precipitacao": dados_resultados.get("dados_grafico_precipitacao", {})
+        }
+        
+        return jsonify(dados_climaticos)
+        
+    except Exception as e:
+        print(f"Erro ao obter dados climáticos: {e}")
+        return jsonify({"erro": "Erro interno do servidor"}), 500
+
 @main_bp.route("/logout", methods=["GET"])
 def logout():
     # Limpar a sessão

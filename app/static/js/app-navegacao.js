@@ -180,17 +180,52 @@ class IrrigaApp {
             const dadosIndices = document.getElementById('dados-indices');
             
             if (indicesElement && dadosIndices) {
+                const primeiros = dados.indices.slice(0, 3);
+                const restantes = dados.indices.slice(3);
+                const restantesQtd = Math.max(restantes.length, 0);
+
                 let indicesHTML = '<div style="font-size: 0.85rem;">';
-                dados.indices.slice(0, 3).forEach(indice => {
+                primeiros.forEach(indice => {
                     indicesHTML += `<div style="margin-bottom: 6px;">• ${indice}</div>`;
                 });
-                if (dados.indices.length > 3) {
-                    indicesHTML += `<div style="color: #6c757d; font-style: italic;">+${dados.indices.length - 3} outros índices</div>`;
+                if (restantesQtd > 0) {
+                    // Container oculto com os itens restantes
+                    indicesHTML += `<div id="indices-extra" style="display:none; margin-top: 6px;">`;
+                    restantes.forEach(indice => {
+                        indicesHTML += `<div style="margin-bottom: 6px;">• ${indice}</div>`;
+                    });
+                    indicesHTML += `</div>`;
+                    // Botão acessível para expandir/colapsar
+                    indicesHTML += `
+                        <button type="button" id="toggle-indices" aria-expanded="false" style="
+                            background: none; border: none; padding: 0; margin-top: 6px;
+                            color: #6c757d; font-style: italic; cursor: pointer; text-decoration: underline;">
+                            +${restantesQtd} outros índices
+                        </button>
+                    `;
                 }
                 indicesHTML += '</div>';
-                
+
                 dadosIndices.innerHTML = indicesHTML;
                 indicesElement.style.display = 'block';
+
+                // Handler de clique para expandir/colapsar
+                const toggleBtn = document.getElementById('toggle-indices');
+                const extra = document.getElementById('indices-extra');
+                if (toggleBtn && extra) {
+                    toggleBtn.addEventListener('click', () => {
+                        const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+                        if (expanded) {
+                            extra.style.display = 'none';
+                            toggleBtn.setAttribute('aria-expanded', 'false');
+                            toggleBtn.textContent = `+${restantesQtd} outros índices`;
+                        } else {
+                            extra.style.display = 'block';
+                            toggleBtn.setAttribute('aria-expanded', 'true');
+                            toggleBtn.textContent = 'ver menos';
+                        }
+                    });
+                }
             }
         }
 
@@ -630,6 +665,45 @@ class IrrigaApp {
         }
         try {
             const modal = new bootstrap.Modal(modalEl);
+            // Anexar handlers de A11y apenas uma vez por modal
+            if (!modalEl.dataset.a11yHandlers) {
+                modalEl.dataset.a11yHandlers = '1';
+                // Captura clique em qualquer elemento que dispare o dismiss para remover foco antes do hide
+                modalEl.addEventListener('click', (e) => {
+                    const dismissEl = e.target.closest('[data-bs-dismiss="modal"]');
+                    if (dismissEl) {
+                        const active = document.activeElement;
+                        if (active && modalEl.contains(active) && typeof active.blur === 'function') {
+                            active.blur();
+                        }
+                        const trigger = document.getElementById('expandir-mapa');
+                        if (trigger && typeof trigger.focus === 'function') {
+                            try { trigger.focus({ preventScroll: true }); } catch (_) { trigger.focus(); }
+                        }
+                    }
+                }, true); // capture: true para executar antes do Bootstrap
+
+                // Tratar tecla Esc para também limpar foco antes do hide
+                modalEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' || e.key === 'Esc') {
+                        const active = document.activeElement;
+                        if (active && modalEl.contains(active) && typeof active.blur === 'function') {
+                            active.blur();
+                        }
+                    }
+                });
+            }
+            // Acessibilidade: garantir que o foco saia do modal antes de aplicar aria-hidden
+            modalEl.addEventListener('hide.bs.modal', () => {
+                const active = document.activeElement;
+                if (active && modalEl.contains(active) && typeof active.blur === 'function') {
+                    active.blur();
+                }
+                const trigger = document.getElementById('expandir-mapa');
+                if (trigger && typeof trigger.focus === 'function') {
+                    try { trigger.focus({ preventScroll: true }); } catch (_) { trigger.focus(); }
+                }
+            }, { once: true });
             // Limpar src ao fechar para forçar reflow em reaberturas e liberar memória
             modalEl.addEventListener('hidden.bs.modal', () => {
                 iframeModal.src = '';
@@ -681,6 +755,58 @@ class IrrigaApp {
         if (this.dadosRecomendacoes && this.dadosRecomendacoes.length > 0) {
             this.exibirRecomendacoesCultivo(this.dadosRecomendacoes);
         }
+
+        // Garantir que o IrrigacaoManager seja inicializado e execute o cálculo automaticamente
+        setTimeout(() => {
+            if (typeof inicializarIrrigacaoManager === 'function') {
+                console.log('Chamando inicializarIrrigacaoManager a partir do carregarCultivo...');
+                const irrigacaoManager = inicializarIrrigacaoManager();
+                
+                if (irrigacaoManager) {
+                    // Verificar se o card de recomendações existe e torná-lo visível
+                    const recomendacoesCard = document.getElementById('recomendacoes-cultivo');
+                    if (recomendacoesCard) {
+                        console.log('Tornando card de recomendações visível');
+                        recomendacoesCard.style.display = 'block';
+                    }
+                    
+                    // Verificar se já existem recomendações calculadas
+                    const recomendacoesElement = document.getElementById('lista-recomendacoes-cultivo');
+                    const jaTemRecomendacoes = recomendacoesElement && recomendacoesElement.children.length > 0 && 
+                                              !recomendacoesElement.querySelector('#loading-recomendacoes');
+                    
+                    if (jaTemRecomendacoes) {
+                        console.log('Recomendações já calculadas, não recalculando...');
+                        return;
+                    }
+                    
+                    // Mostrar carregamento apenas se não há recomendações
+                    if (recomendacoesElement) {
+                        recomendacoesElement.innerHTML = `
+                            <div class="text-center py-4" id="loading-recomendacoes">
+                                <p class="text-muted">Carregando...</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Executar o cálculo de irrigação automaticamente
+                    console.log('Executando cálculo automático de irrigação...');
+                    console.log('irrigacaoManager disponível:', !!irrigacaoManager);
+                    console.log('método mostrarFormularioIrrigacao disponível:', !!irrigacaoManager.mostrarFormularioIrrigacao);
+                    
+                    if (irrigacaoManager && irrigacaoManager.mostrarFormularioIrrigacao) {
+                        console.log('Chamando mostrarFormularioIrrigacao...');
+                        irrigacaoManager.mostrarFormularioIrrigacao().catch(erro => {
+                            console.error('Erro no cálculo automático:', erro);
+                        });
+                    } else {
+                        console.error('IrrigacaoManager ou método não disponível');
+                    }
+                }
+            } else {
+                console.error('Função inicializarIrrigacaoManager não está disponível');
+            }
+        }, 500); // Pequeno atraso para garantir que o DOM esteja pronto
     }
 
     carregarNoticias() {
