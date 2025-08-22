@@ -26,11 +26,11 @@ function calcularNecessidadeDeIrrigacao(dadosFormulario, dadosClimaticos) {
   // Coeficiente de Cultura (Kc) médio para a fase principal do ciclo.
   // Valores baseados na Tabela 8 da circular (Kc-mid).
   const KC_POR_CULTURA = {
-    'feijao': 1.10, // Média de 1.05-1.15
-    'milho': 1.20,
-    'soja': 1.15,
-    'algodao': 1.18, // Média de 1.15-1.20
-    'girassol': 1.08 // Média de 1.00-1.15
+    'Feijão': 1.10, // Média de 1.05-1.15
+    'Milho': 1.20,
+    'Soja': 1.15,
+    'Algodão': 1.18, // Média de 1.15-1.20
+    'Girassol': 1.08 // Média de 1.00-1.15
     // Outras culturas podem ser adicionadas aqui.
   };
   const kc = KC_POR_CULTURA[cultura] || 1.0; // Usa 1.0 como padrão se a cultura não for encontrada.
