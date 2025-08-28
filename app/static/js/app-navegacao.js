@@ -980,6 +980,12 @@ class IrrigaApp {
             case 'sobre-app':
                 this.mostrarSobreApp();
                 break;
+            case 'ver-dicas':
+                this.mostrarDicasCultivo();
+                break;
+            case 'abrir-simulacoes':
+                window.location.href = '/simulacoes-irrigacao';
+                break;
             default:
                 console.log('Ação não implementada:', acao);
         }
@@ -998,6 +1004,128 @@ class IrrigaApp {
     mostrarSobreApp() {
         // Implementar informações sobre o app
         alert('Irriga.ai v1.0\n\nAplicativo desenvolvido para auxiliar agricultores na tomada de decisões sobre irrigação e monitoramento climático.');
+    }
+
+    mostrarDicasCultivo() {
+        // Criar modal com dicas de cultivo
+        const modalHTML = `
+            <div class="modal fade" id="dicasModal" tabindex="-1" role="dialog" aria-labelledby="dicasModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="dicasModalLabel">
+                                <span class="me-2">💡</span>Dicas de Cultivo
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="dicas-container">
+                                <div class="dica-item mb-4">
+                                    <h6 class="fw-bold text-success mb-3">
+                                        <span class="badge bg-success me-2">1</span>
+                                        Adote a rotação de culturas
+                                    </h6>
+                                    <p class="mb-2">Alternar espécies plantadas em uma mesma área ano após ano ajuda a:</p>
+                                    <ul class="list-unstyled ps-3">
+                                        <li class="mb-1">• Reduzir o esgotamento de nutrientes</li>
+                                        <li class="mb-1">• Controlar pragas e doenças naturalmente</li>
+                                        <li class="mb-1">• Melhorar a estrutura física, química e biológica do solo</li>
+                                    </ul>
+                                    <p class="small text-muted mb-0">Essa técnica é uma base da agricultura sustentável e do manejo agrícola responsável.</p>
+                                    <div class="small text-muted mt-2">
+                                        <strong>Fontes:</strong> Wikipédia, vidanaroca.com
+                                    </div>
+                                </div>
+
+                                <div class="dica-item mb-4">
+                                    <h6 class="fw-bold text-success mb-3">
+                                        <span class="badge bg-success me-2">2</span>
+                                        Use culturas de cobertura (adubação verde)
+                                    </h6>
+                                    <p class="mb-2">Plantar espécies como braquiária, crotalária, aveia ou sorgo entre safras:</p>
+                                    <ul class="list-unstyled ps-3">
+                                        <li class="mb-1">• Mantém o solo protegido da erosão</li>
+                                        <li class="mb-1">• Agrega matéria orgânica</li>
+                                        <li class="mb-1">• Fixação de nitrogênio (em leguminosas)</li>
+                                        <li class="mb-1">• Reduz a necessidade de insumos químicos</li>
+                                    </ul>
+                                    <div class="small text-muted mt-2">
+                                        <strong>Fontes:</strong> limcode.com.br, terradecultivo.com.br
+                                    </div>
+                                </div>
+
+                                <div class="dica-item mb-4">
+                                    <h6 class="fw-bold text-success mb-3">
+                                        <span class="badge bg-success me-2">3</span>
+                                        Priorize a composição e saúde do solo com compostagem
+                                    </h6>
+                                    <p class="mb-2">Realizar compostagem com resíduos orgânicos (restos de alimentos, folhas, esterco) permite:</p>
+                                    <ul class="list-unstyled ps-3">
+                                        <li class="mb-1">• Reaproveitar resíduos orgânicos de forma sustentável</li>
+                                        <li class="mb-1">• Melhorar a estrutura do solo, retenção de água, atividade biológica</li>
+                                        <li class="mb-1">• Reduzir a necessidade de fertilizantes externos</li>
+                                    </ul>
+                                    <div class="small text-muted mt-2">
+                                        <strong>Fontes:</strong> Tudo Sobre Roça, Sibic
+                                    </div>
+                                </div>
+
+                                <div class="dica-item mb-4">
+                                    <h6 class="fw-bold text-success mb-3">
+                                        <span class="badge bg-success me-2">4</span>
+                                        Escolha plantas nativas, apropriadas para o seu clima
+                                    </h6>
+                                    <p class="mb-2">Optar por espécies adaptadas localmente:</p>
+                                    <ul class="list-unstyled ps-3">
+                                        <li class="mb-1">• Diminui a necessidade de irrigação e cuidados intensivos</li>
+                                        <li class="mb-1">• Favorece a fauna local (polinizadores, microrganismos)</li>
+                                        <li class="mb-1">• Aumenta a resiliência do cultivo frente a variações climáticas</li>
+                                    </ul>
+                                    <div class="small text-muted mt-2">
+                                        <strong>Fontes:</strong> Sluggo, plantaseplantas.com.br
+                                    </div>
+                                </div>
+
+                                <div class="dica-item mb-4">
+                                    <h6 class="fw-bold text-success mb-3">
+                                        <span class="badge bg-success me-2">5</span>
+                                        Garanta substrato de qualidade e adubação adequada
+                                    </h6>
+                                    <p class="mb-2">Particularmente importante para cultivo em vasos e pequenos espaços:</p>
+                                    <ul class="list-unstyled ps-3">
+                                        <li class="mb-1">• Use substrato poroso (idealmente acima de 80%) para garantir boa oxigenação e drenagem</li>
+                                        <li class="mb-1">• Evite compactar demais o substrato ao preencher vasos</li>
+                                        <li class="mb-1">• Ao transplantar, mantenha a profundidade da raiz sem enterrar ou deixar exposta</li>
+                                        <li class="mb-1">• Adubar com fósforo e usar fungos micorrízicos pode fortalecer o sistema radicular</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remover modal existente se houver
+        const modalExistente = document.getElementById('dicasModal');
+        if (modalExistente) {
+            modalExistente.remove();
+        }
+
+        // Adicionar modal ao body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('dicasModal'));
+        modal.show();
+
+        // Remover modal do DOM quando fechado
+        document.getElementById('dicasModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
     }
 
     // Método para atualizar dados em tempo real

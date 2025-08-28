@@ -30,34 +30,9 @@ class IrrigacaoManager {
    * Cria a interface de irrigação
    */
   criarInterfaceIrrigacao() {
-    console.log('Criando interface de irrigação...');
-    
-    // Adiciona o botão à seção de cultivo, após as recomendações
-    const recomendacoesCultivo = document.getElementById('recomendacoes-cultivo');
-    const secaoCultivo = document.getElementById('section-cultivo');
-    
-    console.log('Elementos encontrados:', {
-      recomendacoesCultivo: !!recomendacoesCultivo,
-      secaoCultivo: !!secaoCultivo
-    });
-    
-    if (recomendacoesCultivo) {
-      const cardIrrigacao = this.criarCardCalculoIrrigacao();
-      recomendacoesCultivo.after(cardIrrigacao);
-      console.log('Card de irrigação adicionado após recomendações');
-    } else if (secaoCultivo) {
-      // Caso o elemento de recomendações não exista, adiciona no início da seção
-      const primeiroElemento = secaoCultivo.querySelector('.cards-grid');
-      const cardIrrigacao = this.criarCardCalculoIrrigacao();
-      if (primeiroElemento) {
-        secaoCultivo.insertBefore(cardIrrigacao, primeiroElemento);
-      } else {
-        secaoCultivo.appendChild(cardIrrigacao);
-      }
-      console.log('Card de irrigação adicionado na seção de cultivo');
-    } else {
-      console.error('Seção de cultivo não encontrada!');
-    }
+    console.log('Interface de irrigação preparada - usando apenas recomendações');
+    // Não cria mais o card de "Cálculo de Irrigação"
+    // As recomendações serão exibidas diretamente no card de recomendações
   }
 
   /**
@@ -85,7 +60,9 @@ class IrrigacaoManager {
           <h5>Resultado do Cálculo:</h5>
           <div id="mensagem-irrigacao"></div>
           <div class="mt-2">
-            <strong>Necessidade total de irrigação:</strong> <span id="valor-irrigacao"></span> mm
+            <div><strong>Frequência de irrigação:</strong> <span id="frequencia-irrigacao"></span> dias</div>
+            <div><strong>Lâmina bruta por evento:</strong> <span id="lamina-bruta"></span> mm</div>
+            <div><strong>Lâmina líquida por evento:</strong> <span id="lamina-liquida"></span> mm</div>
           </div>
         </div>
       </div>
@@ -221,19 +198,19 @@ class IrrigacaoManager {
 
 
   /**
-   * Calcula a necessidade de irrigação usando a função do módulo calcular-irrigacao.js
+   * Calcula o manejo de irrigação usando a nova função do módulo calcular-irrigacao.js
    */
   calcularIrrigacao() {
     console.log('Iniciando método calcularIrrigacao...');
     
     try {
       // Verifica se a função está disponível
-      console.log('Verificando disponibilidade da função calcularNecessidadeDeIrrigacao...');
-      if (typeof calcularNecessidadeDeIrrigacao !== 'function') {
-        console.error('Função calcularNecessidadeDeIrrigacao não está disponível');
+      console.log('Verificando disponibilidade da função calcularManejoDeIrrigacao...');
+      if (typeof calcularManejoDeIrrigacao !== 'function') {
+        console.error('Função calcularManejoDeIrrigacao não está disponível');
         throw new Error('A função de cálculo de irrigação não está disponível');
       }
-      console.log('Função calcularNecessidadeDeIrrigacao está disponível');
+      console.log('Função calcularManejoDeIrrigacao está disponível');
 
       // Verifica se os dados necessários estão disponíveis
       console.log('Verificando dados necessários...');
@@ -258,10 +235,10 @@ class IrrigacaoManager {
       };
         
       console.log('Dados formatados para cálculo de irrigação:', dadosFormularioFormatados);
-      console.log('Chamando função calcularNecessidadeDeIrrigacao...');
+      console.log('Chamando função calcularManejoDeIrrigacao...');
       
-      // Calcula a irrigação
-      this.resultadoIrrigacao = calcularNecessidadeDeIrrigacao(dadosFormularioFormatados, this.dadosClimaticos);
+      // Calcula a irrigação usando a nova função
+      this.resultadoIrrigacao = calcularManejoDeIrrigacao(dadosFormularioFormatados, this.dadosClimaticos);
       
       console.log('Resultado do cálculo de irrigação:', this.resultadoIrrigacao);
       console.log('Chamando exibirResultadoIrrigacao...');
@@ -280,30 +257,9 @@ class IrrigacaoManager {
    * Exibe o resultado do cálculo de irrigação na interface
    */
   exibirResultadoIrrigacao() {
-    const resultadoDiv = document.getElementById('resultado-irrigacao');
-    const mensagemElement = document.getElementById('mensagem-irrigacao');
-    const valorElement = document.getElementById('valor-irrigacao');
-
-    // Ocultar o indicador de carregamento e a mensagem de carregamento
-    const loadingIndicator = document.getElementById('loading-irrigacao');
-    if (loadingIndicator) {
-      loadingIndicator.style.display = 'none';
-    }
-    
-    // Ocultar a mensagem de carregamento na card-description
-    const cardDescription = document.querySelector('#calculo-irrigacao .card-description');
-    if (cardDescription) {
-      cardDescription.style.display = 'none';
-    }
-
-    if (resultadoDiv && mensagemElement && valorElement) {
-      mensagemElement.textContent = this.resultadoIrrigacao.mensagem;
-      valorElement.textContent = this.resultadoIrrigacao.necessidadeTotalIrrigacaoMM;
-      resultadoDiv.style.display = 'block';
-
-      // Adiciona o resultado às recomendações de cultivo
-      this.adicionarRecomendacaoIrrigacao();
-    }
+    // Apenas adiciona o resultado às recomendações de cultivo
+    // O card de "Cálculo de Irrigação" foi removido
+    this.adicionarRecomendacaoIrrigacao();
   }
   
   /**
@@ -323,10 +279,10 @@ class IrrigacaoManager {
       return;
     }
     
-    // Obter dados do diagnóstico
-    const diagnostico = this.resultadoIrrigacao.diagnostico;
-    const porcentagemIrrigacao = diagnostico.porcentagemIrrigacao;
-    const porcentagemPrecipitacao = diagnostico.porcentagemPrecipitacao;
+    // Obter dados dos parâmetros calculados
+    const parametros = this.resultadoIrrigacao.parametrosCalculados;
+    const porcentagemIrrigacao = parametros.porcentagemIrrigacao;
+    const porcentagemPrecipitacao = parametros.porcentagemPrecipitacao;
     
     // Destruir gráfico existente se houver
     if (this.graficoIrrigacaoPizza) {
@@ -389,14 +345,15 @@ class IrrigacaoManager {
       const recomendacaoItem = document.createElement('div');
       recomendacaoItem.className = 'recomendacao-item mt-3';
       
-      // Extrair dados do diagnóstico
-      const diagnostico = this.resultadoIrrigacao.diagnostico;
-      const cultura = diagnostico.cultura;
-      const duracaoCiclo = diagnostico.duracaoCicloDias;
-      const frequencia = diagnostico.frequenciaIrrigacao;
-      const volumePorVez = diagnostico.volumePorIrrigacao;
-      const totalIrrigacao = this.resultadoIrrigacao.necessidadeTotalIrrigacaoMM;
-      const numeroIrrigacoes = diagnostico.numeroIrrigacoes;
+      // Extrair dados do resultado
+      const parametros = this.resultadoIrrigacao.parametrosCalculados;
+      const parametrosBase = this.resultadoIrrigacao.parametrosBase;
+      const cultura = this.dadosFormulario.respostas.etapa_1.valor;
+      const frequencia = parametros.frequenciaDias;
+      const laminaBruta = parametros.laminaBrutaAplicarMM;
+      const laminaLiquida = parametros.laminaLiquidaAplicarMM;
+      const eficiencia = parametrosBase.eficienciaIrrigacao_Ei;
+      const etcDiaria = parametrosBase.ETc_diaria_mm;
     
     // Criar HTML com informações mais claras
     recomendacaoItem.innerHTML = `
@@ -405,26 +362,51 @@ class IrrigacaoManager {
 
           <div class="row">
             <div class="col-md-6">
-              <ul class="list-group list-group-flush">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <strong>Cultura:</strong> <span>${diagnostico.cultura}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <strong>Ciclo:</strong> <span>${duracaoCiclo} dias</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <strong>Frequência de irrigação:</strong> <span>A cada ${frequencia} dias</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <strong>Volume por irrigação:</strong> <span>${volumePorVez} mm</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <strong>Número de irrigações:</strong> <span>${numeroIrrigacoes} vezes</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <strong>Total de irrigação:</strong> <span>${totalIrrigacao} mm</span>
-                </li>
-              </ul>
+
+              
+              <div class="mb-3">
+                <h6 class="fw-bold text-secondary">📊 Resumo do Cálculo</h6>
+                <div class="bg-light p-3 rounded">
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <small class="text-muted">Cultura:</small><br>
+                      <span class="fw-bold">${cultura}</span>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">ETc Diária:</small><br>
+                      <span class="fw-bold">${etcDiaria.toFixed(2)} mm/dia</span>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Frequência:</small><br>
+                      <span class="fw-bold text-info">${frequencia} dias</span>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Eficiência:</small><br>
+                      <span class="fw-bold text-success">${(eficiencia * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="alert alert-info mb-0">
+                <h6 class="alert-heading"><i class="fas fa-lightbulb me-2"></i>Recomendação</h6>
+                <p class="mb-2">${this.resultadoIrrigacao.recomendacao}</p>
+                <hr>
+                <div class="row text-center">
+                  <div class="col-4">
+                    <div class="fw-bold text-primary">${laminaBruta} mm</div>
+                    <small class="text-muted">Lâmina Bruta</small>
+                  </div>
+                  <div class="col-4">
+                    <div class="fw-bold text-success">${laminaLiquida} mm</div>
+                    <small class="text-muted">Lâmina Líquida</small>
+                  </div>
+                  <div class="col-4">
+                    <div class="fw-bold text-info">${frequencia} dias</div>
+                    <small class="text-muted">Intervalo</small>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="col-md-6">
               <div class="chart-container" style="position: relative; height: 200px;">
@@ -432,7 +414,7 @@ class IrrigacaoManager {
               </div>
             </div>
           </div>
-          <div class="small text-muted mt-3">${this.resultadoIrrigacao.mensagem}</div>
+          <div class="small text-muted mt-3">Cálculo baseado na Circular Técnica 136 da Embrapa</div>
         </div>
       </div>
     `;

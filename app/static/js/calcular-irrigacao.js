@@ -1,54 +1,74 @@
-// Realiza o calculo da irrigacao com base nas informacoes vinda do formulário e com os dados de ET e Precipitação. Deve retornar quanto de irrigação deve ser feita por dia. 
+// Realiza o cálculo da irrigação com base nas informações vindas do formulário e com os dados de ET e Precipitação.
+// Calcula a Lâmina Bruta (LB) e a Frequência de Irrigação (F) com base em parâmetros detalhados do solo e da cultura.
 /**
- * Calcula a necessidade de irrigação para uma cultura com base nas respostas de um formulário e em dados climáticos históricos.
- * A metodologia segue os princípios do balanço hídrico da cultura, conforme detalhado na 'Circular Técnica 136' da Embrapa.
+ * Calcula a Lâmina Bruta (LB) e a Frequência de Irrigação (F) com base em parâmetros detalhados do solo e da cultura.
+ * Esta versão aprimorada utiliza as equações e tabelas (CAD, f, Z, Ei) da 'Circular Técnica 136' da Embrapa
+ * para fornecer uma recomendação operacional de manejo.
  *
  * @param {object} dadosFormulario - O objeto JSON contendo as respostas do formulário do agricultor.
- * @param {object} dadosClimaticos - O objeto JSON com os dados históricos anuais de clima (precipitação, ET, PET).
- * @returns {object} Um objeto contendo a necessidade total de irrigação em milímetros (mm) e uma mensagem explicativa.
+ * @param {object} dadosClimaticos - O objeto JSON com os dados históricos anuais de clima.
+ * @returns {object} Um objeto com a recomendação de manejo e todos os parâmetros calculados.
  */
-function calcularNecessidadeDeIrrigacao(dadosFormulario, dadosClimaticos) {
+function calcularManejoDeIrrigacao(dadosFormulario, dadosClimaticos) {
 
-  // --- ETAPA 1: Extrair e interpretar os parâmetros do formulário ---
-
-  const respostas = dadosFormulario.respostas;
-
-  // Mapeamento de valores do formulário para parâmetros de cálculo.
-  const cultura = respostas.etapa_1.valor; // Ex: "feijao"
-  const tipoSolo = respostas.etapa_5.valor; // Ex: "arenoso"
+  // --- ETAPA 1: Extrair parâmetros do formulário ---
+  const cultura = dadosFormulario.respostas.etapa_1.valor; // Ex: "feijao"
+  const tipoSolo = dadosFormulario.respostas.etapa_5.valor; // Ex: "arenoso"
   
-  // Extrai a duração média do ciclo em dias (ex: "100_150" -> 125)
-  const [cicloMin, cicloMax] = respostas.etapa_3.valor.split('_').map(Number);
-  const duracaoCicloDias = (cicloMin + cicloMax) / 2;
+  // NOTA: O formulário indica "Não utilizo irrigação". Para fins de cálculo,
+  // assumiremos um sistema de "Aspersão Convencional Fixo". Em uma aplicação real,
+  // esta informação deveria vir do formulário.
+  const sistemaIrrigacao = 'aspersao_convencional_fixo';
 
-  // --- ETAPA 2: Definir constantes agronômicas com base na 'Circular Técnica 136' ---
+  // --- ETAPA 2: Definir Tabelas de Referência (Baseado na Circular Técnica 136) ---
 
-  // Coeficiente de Cultura (Kc) médio para a fase principal do ciclo.
-  // Valores baseados na Tabela 8 da circular (Kc-mid).
-  const KC_POR_CULTURA = {
-    'Feijão': 1.10, // Média de 1.05-1.15
-    'Milho': 1.20,
-    'Soja': 1.15,
-    'Algodão': 1.18, // Média de 1.15-1.20
-    'Girassol': 1.08 // Média de 1.00-1.15
-    // Outras culturas podem ser adicionadas aqui.
+  // Tabela 1: Capacidade de Água Disponível (CAD) em mm/m.
+  const TABELA_CAD_POR_SOLO = {
+    'arenoso': 85,
+    'franco-arenoso': 120,
+    'franco': 170,
+    'franco-argiloso': 190,
+    'silto-argiloso': 210,
+    'argiloso': 230
   };
-  const kc = KC_POR_CULTURA[cultura] || 1.0; // Usa 1.0 como padrão se a cultura não for encontrada.
 
-  // --- ETAPA 3: Processar os dados climáticos para obter médias diárias ---
+  // Tabela 3: Profundidade efetiva do sistema radicular (Z) em cm.
+  const TABELA_Z_POR_CULTURA = {
+    'feijao': 25, // Média de 20-30 cm
+    'milho': 45, // Média de 40-50 cm
+    'soja': 45, // Média de 40-50 cm
+    'algodao': 30,
+    'tomate': 35 // Média de 20-50 cm
+  };
 
-  // Função auxiliar para calcular a média de um array de números.
+  // Tabela 4: Eficiência de Irrigação (Ei) em decimal.
+  const TABELA_EI_POR_SISTEMA = {
+    'aspersao_convencional_fixo': 0.75, // Média de 70-80%
+    'pivo_central': 0.825, // Média de 75-90%
+    'gotejamento': 0.825 // Média de 75-90%
+  };
+
+  // Tabela 2: Fator de disponibilidade (f). Mapeia cultura para seu grupo e ETc para o valor de f.
+  const GRUPO_CULTURA = { 'feijao': 3, 'milho': 4, 'soja': 4, 'tomate': 2, 'batata': 1 };
+  const TABELA_F = {
+    // ETm (mm/dia) ->   2      3      4      5      6      7      8      9      10
+    1: [0.50, 0.425, 0.35, 0.30, 0.25, 0.225, 0.20, 0.20, 0.175],
+    2: [0.675, 0.575, 0.475, 0.40, 0.35, 0.325, 0.275, 0.25, 0.225],
+    3: [0.80, 0.70, 0.60, 0.50, 0.45, 0.425, 0.375, 0.35, 0.30],
+    4: [0.875, 0.80, 0.70, 0.60, 0.55, 0.50, 0.45, 0.425, 0.40]
+  };
+  
+  // Coeficiente de Cultura (Kc) médio para a fase principal do ciclo.
+  const KC_POR_CULTURA = { 'feijao': 1.10, 'milho': 1.20, 'soja': 1.15, 'algodao': 1.18, 'tomate': 1.15 };
+
+  // --- ETAPA 3: Processar dados climáticos e buscar parâmetros ---
+
   const calcularMedia = (arr) => {
     if (!arr || arr.length === 0) return 0;
-    const soma = arr.reduce((acc, val) => acc + val, 0);
-    return soma / arr.length;
+    return arr.reduce((acc, val) => acc + val, 0) / arr.length;
   };
-
-  // A Evapotranspiração de Referência (ETo) corresponde à PET (Evapotranspiração Potencial) nos dados.
-  // Verificar se os dados estão disponíveis na estrutura esperada
-  let mediaAnualETo = 0;
-  let mediaAnualPrec = 0;
   
+  let mediaAnualETo = 0;
   if (dadosClimaticos && dadosClimaticos.dados_grafico_balanco_hidrico && 
       dadosClimaticos.dados_grafico_balanco_hidrico.dados && 
       dadosClimaticos.dados_grafico_balanco_hidrico.dados.series && 
@@ -56,74 +76,106 @@ function calcularNecessidadeDeIrrigacao(dadosFormulario, dadosClimaticos) {
     mediaAnualETo = calcularMedia(dadosClimaticos.dados_grafico_balanco_hidrico.dados.series[1].valores);
   }
   
-  if (dadosClimaticos && dadosClimaticos.dados_grafico_precipitacao && 
-      dadosClimaticos.dados_grafico_precipitacao.dados && 
-      dadosClimaticos.dados_grafico_precipitacao.dados.series && 
-      dadosClimaticos.dados_grafico_precipitacao.dados.series.length > 0) {
-    mediaAnualPrec = calcularMedia(dadosClimaticos.dados_grafico_precipitacao.dados.series[0].valores);
-  }
-
-  // Converte as médias anuais para médias diárias.
   const mediaDiariaETo = mediaAnualETo / 365;
-  const mediaDiariaPrec = mediaAnualPrec / 365;
 
-  // --- ETAPA 4: Realizar o cálculo do Balanço Hídrico ---
+  const kc = KC_POR_CULTURA[cultura] || 1.0;
+  const etcDiaria = mediaDiariaETo * kc; // Esta é a nossa ETm para a Tabela 2
 
-  // a. Calcular a necessidade total de água da cultura (Evapotranspiração da Cultura - ETc) para o ciclo.
-  // ETc = ETo * Kc
-  const etcDiaria = mediaDiariaETo * kc;
-  const etcTotalCiclo = etcDiaria * duracaoCicloDias;
+  // Busca dos parâmetros nas tabelas
+  const cad_mm_por_m = TABELA_CAD_POR_SOLO[tipoSolo] || 170; // Padrão: Franco
+  const Z_cm = TABELA_Z_POR_CULTURA[cultura] || 40; // Padrão: 40 cm
+  const Ei = TABELA_EI_POR_SISTEMA[sistemaIrrigacao] || 0.75; // Padrão: 75%
 
-  // b. Calcular a precipitação total esperada durante o ciclo.
-  const precTotalCiclo = mediaDiariaPrec * duracaoCicloDias;
+  // Lógica para buscar 'f' na Tabela 2
+  const grupo = GRUPO_CULTURA[cultura] || 3;
+  const etIndex = Math.max(0, Math.min(Math.round(etcDiaria) - 2, 8)); // Ajusta ETc para o índice do array (2 a 10)
+  const f = TABELA_F[grupo][etIndex];
 
-  // c. Calcular o déficit hídrico, que é a Necessidade de Irrigação (Lâmina Líquida).
-  // Se a chuva for maior que a necessidade da planta, a irrigação necessária é zero.
-  let necessidadeIrrigacaoLiquida = etcTotalCiclo - precTotalCiclo;
-  if (necessidadeIrrigacaoLiquida < 0) {
-    necessidadeIrrigacaoLiquida = 0;
+  // --- ETAPA 4: Aplicar as Equações de Manejo ---
+
+  // Converte CAD de mm/m para mm/cm para usar na fórmula
+  const cad_mm_por_cm = cad_mm_por_m / 100;
+
+  // Equação 1: Lâmina Líquida (LL)
+  // LL = CAD (mm/cm) * f * Z (cm)
+  const LL = cad_mm_por_cm * f * Z_cm;
+
+  // Equação 4: Frequência de Irrigação (F)
+  // F = LL (mm) / ETc (mm/dia)
+  let F_dias = LL / etcDiaria;
+  // Arredonda para baixo para o dia inteiro mais próximo, como recomendado no artigo.
+  F_dias = Math.floor(F_dias);
+
+  // Ajusta a lâmina líquida para a frequência arredondada (prática recomendada no exemplo 9.1)
+  const LL_ajustada = F_dias * etcDiaria;
+
+  // Equação 3: Lâmina Bruta (LB)
+  // LB = LL (mm) / Ei (decimal)
+  const LB = LL_ajustada / Ei;
+
+  // --- ETAPA 5: Calcular porcentagens de irrigação vs precipitação ---
+  
+  // Extrair dados de precipitação da estrutura de dados climáticos
+  let precipitacaoAnual = 0;
+  
+  if (dadosClimaticos.dados_grafico_precipitacao && 
+      dadosClimaticos.dados_grafico_precipitacao.dados && 
+      dadosClimaticos.dados_grafico_precipitacao.dados.series) {
+    // Busca a série de precipitação
+    const seriePrecipitacao = dadosClimaticos.dados_grafico_precipitacao.dados.series
+      .find(serie => serie.nome === 'Precipitação');
+    
+    if (seriePrecipitacao && seriePrecipitacao.valores) {
+      precipitacaoAnual = seriePrecipitacao.valores.reduce((acc, val) => acc + val, 0);
+    }
   }
-
-  // --- ETAPA 5: Calcular frequência e volume de irrigação ---
   
-  // Definir frequência de irrigação com base no tipo de solo
-  const FREQUENCIA_POR_SOLO = {
-    'arenoso': 2, // A cada 2 dias para solos arenosos (drenagem rápida)
-    'argiloso': 5, // A cada 5 dias para solos argilosos (retenção alta)
-    'medio': 3 // A cada 3 dias para solos médios (loam)
-  };
-  
-  const frequenciaIrrigacao = FREQUENCIA_POR_SOLO[tipoSolo] || 3; // Padrão: a cada 3 dias
-  
-  // Calcular número total de irrigações durante o ciclo
-  const numeroIrrigacoes = Math.ceil(duracaoCicloDias / frequenciaIrrigacao);
-  
-  // Calcular volume de água por irrigação (em mm)
-  let volumePorIrrigacao = 0;
-  if (numeroIrrigacoes > 0 && necessidadeIrrigacaoLiquida > 0) {
-    volumePorIrrigacao = necessidadeIrrigacaoLiquida / numeroIrrigacoes;
+  // Se não encontrou dados de precipitação, usa um valor padrão baseado na região
+  if (precipitacaoAnual === 0) {
+    precipitacaoAnual = 1200; // Valor médio para o Brasil (mm/ano)
   }
   
-  // Calcular porcentagem de irrigação necessária em relação à necessidade total de água
-  const porcentagemIrrigacao = (necessidadeIrrigacaoLiquida / etcTotalCiclo) * 100;
-  const porcentagemPrecipitacao = (precTotalCiclo / etcTotalCiclo) * 100;
+  // Estimar necessidade anual de irrigação (baseado na frequência e lâmina bruta)
+  const irrigacoesAnuais = Math.floor(365 / F_dias);
+  const irrigacaoAnual = irrigacoesAnuais * LB;
   
-  // --- ETAPA 6: Retornar o resultado final ---
+  // Calcular porcentagens
+  const totalAgua = precipitacaoAnual + irrigacaoAnual;
+  const porcentagemPrecipitacao = totalAgua > 0 ? (precipitacaoAnual / totalAgua) * 100 : 0;
+  const porcentagemIrrigacao = totalAgua > 0 ? (irrigacaoAnual / totalAgua) * 100 : 100;
 
+  // --- ETAPA 6: Retornar o resultado ---
   return {
-    necessidadeTotalIrrigacaoMM: parseFloat(necessidadeIrrigacaoLiquida.toFixed(2)),
-    diagnostico: {
-      cultura: cultura,
-      duracaoCicloDias: duracaoCicloDias,
-      necessidadeAguaTotalMM: parseFloat(etcTotalCiclo.toFixed(2)),
-      precipitacaoEsperadaMM: parseFloat(precTotalCiclo.toFixed(2)),
-      kcUtilizado: kc,
-      frequenciaIrrigacao: frequenciaIrrigacao,
-      volumePorIrrigacao: parseFloat(volumePorIrrigacao.toFixed(2)),
-      numeroIrrigacoes: numeroIrrigacoes,
-      porcentagemIrrigacao: parseFloat(porcentagemIrrigacao.toFixed(2)),
-      porcentagemPrecipitacao: parseFloat(porcentagemPrecipitacao.toFixed(2))
+    recomendacao: `Para a cultura de ${cultura} em solo ${tipoSolo}, recomenda-se irrigar a cada ${F_dias} dias, aplicando uma lâmina bruta de ${LB.toFixed(1)} mm por evento.`,
+    parametrosCalculados: {
+      frequenciaDias: F_dias,
+      laminaLiquidaAplicarMM: parseFloat(LL_ajustada.toFixed(2)),
+      laminaBrutaAplicarMM: parseFloat(LB.toFixed(1)),
+      porcentagemIrrigacao: parseFloat(porcentagemIrrigacao.toFixed(1)),
+      porcentagemPrecipitacao: parseFloat(porcentagemPrecipitacao.toFixed(1))
     },
-    mensagem: `Para a cultura de ${respostas.etapa_1.texto}, com um ciclo de ${duracaoCicloDias} dias, a necessidade total de água (ETc) é de aproximadamente ${etcTotalCiclo.toFixed(2)} mm. Com uma precipitação esperada de ${precTotalCiclo.toFixed(2)} mm no mesmo período, a necessidade de irrigação suplementar (lâmina líquida) é de ${necessidadeIrrigacaoLiquida.toFixed(2)} mm.`
+    parametrosBase: {
+      CAD_mm_por_m: cad_mm_por_m,
+      fatorDisponibilidade_f: f,
+      profundidadeRaiz_Z_cm: Z_cm,
+      eficienciaIrrigacao_Ei: Ei,
+      ETc_diaria_mm: parseFloat(etcDiaria.toFixed(2))
+    }
+  };
+}
+
+// Função de compatibilidade para manter a interface anterior
+function calcularNecessidadeDeIrrigacao(dadosFormulario, dadosClimaticos) {
+  const manejo = calcularManejoDeIrrigacao(dadosFormulario, dadosClimaticos);
+  
+  return {
+    necessidadeTotalIrrigacaoMM: manejo.parametrosCalculados.laminaBrutaAplicarMM,
+    diagnostico: {
+      cultura: dadosFormulario.respostas.etapa_1.valor,
+      frequenciaIrrigacao: manejo.parametrosCalculados.frequenciaDias,
+      volumePorIrrigacao: manejo.parametrosCalculados.laminaBrutaAplicarMM,
+      ETc_diaria_mm: manejo.parametrosBase.ETc_diaria_mm
+    },
+    mensagem: manejo.recomendacao
   };
 }

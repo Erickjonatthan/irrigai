@@ -152,6 +152,30 @@ def app_principal():
 
     return render_template("app-principal.html", usuario=usuario)
 
+@main_bp.route("/simulacoes-irrigacao", methods=["GET"])
+def simulacoes_irrigacao():
+    if "head" not in session:
+        return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso se não estiver autenticado
+
+    head = session["head"]
+    usuario = session["usuario"]
+    user_id = session.get("user_id")
+
+    # Verifica se o token ainda é válido
+    if not verificar_token_valido(api_url, head):
+        session.pop("head", None)  # Remove o token inválido da sessão
+        return redirect(url_for("main.acesso"))  # Redireciona para a página de acesso
+
+    # Verifica se preencheu o formulário inicial
+    user_folder = os.path.join("app/static/data", user_id)
+    formulario_inicial_path = os.path.join(user_folder, "formulario_inicial.json")
+    
+    if not os.path.exists(formulario_inicial_path):
+        # Se não preencheu o formulário inicial, redireciona
+        return redirect(url_for("main.formulario_inicial"))
+
+    return render_template("simulacoes-irrigacao.html", usuario=usuario)
+
 @main_bp.route("/verificar-dados-analise", methods=["GET"])
 def verificar_dados_analise():
     if "head" not in session:
